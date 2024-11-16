@@ -1,0 +1,51 @@
+/* Base Styles */
+body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  #app {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Color Follower */
+  .color-follower {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    transition: transform 0.1s ease-out, background 0.1s ease-out;
+  }
+  
+  /* Social Icon Styles */
+  .social-icon a {
+    position: absolute;
+    background: white;
+    color: white;
+    box-shadow: -1px -1px 20px 0px rgba(0, 0, 0, 0.3);
+    display: inline-block;
+    width: 150px;
+    height: 80px;
+    transform-origin: 50% 50%;
+    transition: 0.15s ease-out;
+  }
+  
+  .social-icon i {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    transition: 0.15s ease-out;
+  }
+  
+  /* Additional Hover Effects */
+  .twitter:hover i {
+    color: #00aced;
+  }
+  
+  .youtube:hover i {
+    color: #e62117;
+  }
+  
