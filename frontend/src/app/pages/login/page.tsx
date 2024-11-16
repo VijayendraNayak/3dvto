@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import "./login.css";
 import Link from 'next/link';
-import { FaPowerOff } from "react-icons/fa";
+
 
 const page: React.FC = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -62,59 +62,64 @@ const page: React.FC = () => {
           transform: "translate(-50%, -50%)",
         }}
       >
-        <h1 className="font-space-mono text-sm uppercase tracking-wide">
-          Login to Your Account
-        </h1>
-        <p className="font-exo text-2xl mt-4">
-          Please enter your credentials to continue
-        </p>
+        <div className="card bg-transparent shadow-lg rounded-lg p-6 sm:p-8 w-11/12 sm:w-96 border border-gray-300 cursor-pointer">
+          <h1 className="font-sans-serif text-sm sm:text-lg md:text-2xl lg:text-3xl xl:text-4xl uppercase tracking-wide font-bold">
+            Login to Your Account
+          </h1>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div>
-            <label htmlFor="username" className="block text-sm">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-              placeholder="Enter your username"
-            />
-          </div>
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-4">
+            <div>
+              <label
+                htmlFor="username"
+                className="text-sm sm:text-md font-sans-serif text-left block"
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                placeholder="Enter your username"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-              placeholder="Enter your password"
-            />
-          </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="text-sm sm:text-md block font-sans-serif text-left"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                placeholder="Enter your password"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full px-4 py-2 mt-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Log In
-          </button>
-        </form>
-        
-        <Link href="/pages/register" className="mt-8 text-sm p-3">Don't have an account?</Link>
-       
+            <button
+              type="submit"
+              className="w-full px-4 py-2 mt-4 bg-gradient-to-r from-purple-500 to-violet-300 text-white rounded-lg hover:from-purple-600 hover:to-violet-400"
+            >
+              Log In
+            </button>
+          </form>
+
+          <Link href="/pages/register" className="mt-6 sm:mt-10 text-xs sm:text-sm p-3">
+            Don't have an account?
+          </Link>
+        </div>
       </div>
-
-      
     </div>
+
   );
 };
 
