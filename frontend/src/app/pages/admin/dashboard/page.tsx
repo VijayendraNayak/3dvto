@@ -19,7 +19,7 @@ const page = () => {
               <Link href="/pages/admin/add">Add Stock</Link>
             </li>
             <li className="px-4 py-2 hover:bg-blue-700">
-              <a href="/pages/admin/remove">Remove Stock</a>
+              <a href="/pages/admin/delete">Delete Stock</a>
             </li>
             <li className="px-4 py-2 hover:bg-blue-700">
               <a href="/pages/admin/updateitem">Update Stock</a>
