@@ -8,9 +8,9 @@ const page = () => {
       {/* Sidebar */}
       <aside className="relative w-64 bg-blue-800 text-white z-10">
         <div className="p-6 text-center">
-          <h1 className="text-lg font-bold">Admin Panel</h1>
+          <h1 className="text-lg font-bold mt-20">Admin Panel</h1>
         </div>
-        <nav className="mt-6">
+        <nav className="mt-2">
           <ul className="space-y-4">
             <li className="px-4 py-2 hover:bg-blue-700">
               <Link href="/pages/admin/dashboard">Dashboard</Link>
@@ -32,7 +32,7 @@ const page = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="relative flex-1 p-6 z-0">
+      <main className="relative flex-1 p-6 z-0 mt-20">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
         {/* Stats Section */}
         <div className="grid grid-cols-3 gap-6">
