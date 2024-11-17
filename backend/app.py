@@ -5,8 +5,11 @@ from bson.objectid import ObjectId
 from functools import wraps
 import jwt
 from datetime import datetime, timedelta, timezone
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 
 # Configuration
 app.config["MONGO_URI"] = "mongodb://localhost:27017/VTO"
@@ -73,6 +76,8 @@ def register():
         'username': data['username'],
         'email': data['email'],
         'password': hashed_password,
+        'adress':data['adress'],
+        'phone':data['phone'],
         'role': 'user',  # Default role
         'created_at': datetime.now(timezone.utc)
     }
