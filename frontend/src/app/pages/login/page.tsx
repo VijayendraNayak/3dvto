@@ -6,10 +6,13 @@ import axios from "axios";
 import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import { Toaster, toast } from 'sonner';
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { login } from "../../../../store/slices/authSlice";
 
 
 const page: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [iseyevis, setIseyevis] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -33,7 +36,7 @@ const page: React.FC = () => {
       });
       return;
     }
-
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error("Please enter a valid email address", {
@@ -51,23 +54,24 @@ const page: React.FC = () => {
       return;
     }
     try {
-
       toast.loading("loging the user...")
       const response = await axios.post("/api/login", formData)
-      console.log(response.data)
+      const data=response.data.data;
+      console.log(data)
       if (response.status === 200) {
         toast.success("Login successful! Redirecting to the home page...", {
           position: "top-center",
           duration: 2000
         })
         setTimeout(() => {
-          if (response.data.role === "admin") router.push("/pages/admin/dashboard")
-          else router.push("/")
+          if (data.role === "admin") router.push("/pages/admin/dashboard")
+            else router.push("/")
         },2000)
         setFormData({
           email: "",
           password: ""
         })
+        dispatch(login({email: data.email,id:data.id,role:data.role,name:data.name}));
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
