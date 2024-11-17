@@ -1,5 +1,5 @@
-"use client"
-import React, { useState, useEffect } from "react";
+"use client";
+import React, { useState } from "react";
 import "./register.css";
 import Link from 'next/link';
 import { VscEye } from "react-icons/vsc";
@@ -15,11 +15,12 @@ const page: React.FC = () => {
   const [iseyevis,setIseyevis]=useState(false);
   const router=useRouter();
 
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     phone: "",
-    adress: "",
+    address: "",
     password: "",
   });
 
@@ -30,7 +31,11 @@ const page: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.email || !formData.password || !formData.adress || !formData.phone) {
+
+    // Handle the registration logic here
+    console.log("Registering with", formData);
+
+    if (!formData.username || !formData.email || !formData.password || !formData.address || !formData.phone) {
       alert("Please fill in all fields");
       return;
     }
@@ -43,7 +48,7 @@ const page: React.FC = () => {
           username: "",
           email: "",
           password: "",
-          adress: "",
+          address: "", // Corrected typo here
           phone: "",
         });
       }
@@ -54,64 +59,38 @@ const page: React.FC = () => {
         alert("An unexpected error occurred.");
       }
     }
+
   };
   
   const handleEyeclick=()=>{
     setIseyevis(!iseyevis);
   }
 
-
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      setMousePosition({ x: event.clientX, y: event.clientY });
-
-      // Change color dynamically based on mouse position
-      const red = (event.clientX / window.innerWidth) * 255;
-      const green = (event.clientY / window.innerHeight) * 255;
-      const blue = 255 - (red + green) / 2; // Create a dynamic effect based on mouse position
-
-      setColor(`rgb(${red}, ${green}, ${blue})`);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
   return (
-    <div id="app" className="relative w-full h-screen">
-      {/* Color Follower with Dynamic Color */}
-      <div
-        className="color-follower"
-        style={{
-          left: `${mousePosition.x}px`,
-          top: `${mousePosition.y}px`,
-          background: color, // Dynamic color based on mouse position
-        }}
-      ></div>
+    <div className="flex items-center justify-center h-screen w-full relative mt-10">
+      {/* Card Container - Adjusting width and z-index */}
+      <div className="flex flex-col sm:flex-row w-full sm:w-4/5 lg:w-2/3 xl:w-80px bg-gradient-to-r from-indigo-700 to-purple-900 rounded-lg relative z-10">
+        
+        {/* Left Section (Image) */}
+        <div className="flex justify-center items-center w-full rounded-l-lg p-6">
+          <img
+            src="/login.png" // Replace with your logo path
+            alt="Virtual Try On"
+            className="h-100 hidden md:block lg:block xl:block"
+          />
+        </div>
 
-      {/* Main Content */}
-      <div
-        className="absolute text-black text-center"
-        style={{
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div className="card bg-transparent shadow-lg rounded-lg p-9 sm:p-8 w-11/12 sm:w-96 border border-gray-300 cursor-pointer mt-20">
-          <h1 className="font-sans-serif text-sm sm:text-lg md:text-2xl lg:text-3xl xl:text-4xl uppercase tracking-wide font-bold">
-            Register
-          </h1>
-
-          {/* Register Form */}
+        {/* Right Section (Form) */}
+        <div className="flex flex-col justify-center items-center xl:w-full lg:w-1/2 sm:w-1/2 lg:mr-4 bg-transparent rounded-r-lg ">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 text-center mt-5">
+            Register for Virtual Try On
+          </h2>
           <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-4">
+
             <div>
               <label
                 htmlFor="username"
-                className="text-sm sm:text-md font-sans-serif text-left block"
+                className="text-sm sm:text-md font-sans-serif text-left block text-white font-bold"
               >
                 Username
               </label>
@@ -121,7 +100,7 @@ const page: React.FC = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
                 placeholder="Enter your username"
               />
             </div>
@@ -129,7 +108,7 @@ const page: React.FC = () => {
             <div>
               <label
                 htmlFor="email"
-                className="text-sm sm:text-md font-sans-serif text-left block"
+                className="text-sm sm:text-md font-sans-serif text-left block text-white font-bold"
               >
                 Email
               </label>
@@ -139,7 +118,7 @@ const page: React.FC = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
                 placeholder="Enter your email"
               />
             </div>
@@ -147,9 +126,9 @@ const page: React.FC = () => {
             <div>
               <label
                 htmlFor="phone"
-                className="text-sm sm:text-md font-sans-serif text-left block"
+                className="text-sm sm:text-md font-sans-serif text-left block text-white font-bold"
               >
-                Mobile
+                Phone Number
               </label>
               <input
                 type="text"
@@ -157,37 +136,47 @@ const page: React.FC = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-                placeholder="Enter your mobile number"
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
+                placeholder="Enter your phone number"
               />
             </div>
 
             <div>
               <label
-                htmlFor="adress"
-                className="text-sm sm:text-md font-sans-serif text-left block"
+                htmlFor="address"
+                className="text-sm sm:text-md font-sans-serif text-left block text-white font-bold"
               >
-                Adress
+                Address
               </label>
               <input
                 type="text"
-                id="adress"
-                name="adress"
-                value={formData.adress}
+                id="address"
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-                placeholder="Enter your adress"
+
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
+                placeholder="Enter your address"
               />
             </div>
-
 
             <div>
               <label
                 htmlFor="password"
-                className="text-sm sm:text-md block font-sans-serif text-left"
+                className="text-sm sm:text-md block font-sans-serif text-left text-white font-bold"
               >
                 Password
               </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
+                placeholder="Enter your password"
+              />
+
               <div className="relative">
                 <input
                   type={!iseyevis?"password":"text"}
@@ -207,6 +196,7 @@ const page: React.FC = () => {
                   onClick={handleEyeclick}
                 />
               </div>
+
             </div>
 
             <button
@@ -217,13 +207,14 @@ const page: React.FC = () => {
             </button>
           </form>
 
-          <Link href="/pages/login" className="mt-6 sm:mt-10 text-xs sm:text-sm p-3">
-            Have an account?
-          </Link>
+          <div className=" text-center p-1">
+            <Link href="/pages/login" className="text-sm text-white hover:underline">
+              Already have an account? Log in
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-
   );
 };
 
