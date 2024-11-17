@@ -2,19 +2,25 @@
 import React, { useState, useEffect } from "react";
 import "./register.css";
 import Link from 'next/link';
+import { VscEye } from "react-icons/vsc";
+import { VscEyeClosed } from "react-icons/vsc";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
 
 
 const page: React.FC = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [color, setColor] = useState<string>("rgba(255, 255, 255, 0.8)");
+  const [iseyevis,setIseyevis]=useState(false);
+  const router=useRouter();
 
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    mobile: "",
-    address: "",
+    phone: "",
+    adress: "",
     password: "",
-    confirmPassword: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,11 +28,37 @@ const page: React.FC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle the login logic here
-    console.log("Logging in with", formData);
+    if (!formData.username || !formData.email || !formData.password || !formData.adress || !formData.phone) {
+      alert("Please fill in all fields");
+      return;
+    }
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/register", formData);
+      if (response.status === 201) {
+        alert("User registered successfully!");
+        router.push('/pages/login');
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          adress: "",
+          phone: "",
+        });
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred.");
+      }
+    }
   };
+  
+  const handleEyeclick=()=>{
+    setIseyevis(!iseyevis);
+  }
 
 
   useEffect(() => {
@@ -114,16 +146,16 @@ const page: React.FC = () => {
 
             <div>
               <label
-                htmlFor="mobile"
+                htmlFor="phone"
                 className="text-sm sm:text-md font-sans-serif text-left block"
               >
                 Mobile
               </label>
               <input
-                type="tel"
-                id="mobile"
-                name="mobile"
-                value={formData.mobile}
+                type="text"
+                id="phone"
+                name="phone"
+                value={formData.phone}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
                 placeholder="Enter your mobile number"
@@ -132,19 +164,19 @@ const page: React.FC = () => {
 
             <div>
               <label
-                htmlFor="address"
+                htmlFor="adress"
                 className="text-sm sm:text-md font-sans-serif text-left block"
               >
-                Address
+                Adress
               </label>
               <input
                 type="text"
-                id="address"
-                name="address"
-                value={formData.address}
+                id="adress"
+                name="adress"
+                value={formData.adress}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-                placeholder="Enter your address"
+                placeholder="Enter your adress"
               />
             </div>
 
@@ -156,22 +188,32 @@ const page: React.FC = () => {
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-                placeholder="Enter your password"
-              />
+              <div className="relative">
+                <input
+                  type={!iseyevis?"password":"text"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                  placeholder="Enter your password"
+                />
+                <VscEye
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${iseyevis?"flex":"hidden"} cursor-pointer`}
+                  onClick={handleEyeclick}
+                />
+                <VscEyeClosed
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${iseyevis?"hidden":"flex"} cursor-pointer`}
+                  onClick={handleEyeclick}
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               className="w-full px-4 py-2 mt-4 bg-gradient-to-r from-purple-500 to-violet-300 text-white rounded-lg hover:from-purple-600 hover:to-violet-400"
             >
-             Register
+              Register
             </button>
           </form>
 
