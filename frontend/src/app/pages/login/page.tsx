@@ -53,7 +53,8 @@ const page: React.FC = () => {
     try {
 
       toast.loading("loging the user...")
-      const response = await axios.post("http://127.0.0.1:5000/login", formData)
+      const response = await axios.post("/api/login", formData)
+      console.log(response.data)
       if (response.status === 200) {
         toast.success("Login successful! Redirecting to the home page...", {
           position: "top-center",
