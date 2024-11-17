@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # Allow all origins
 
 # Configuration
 app.config["MONGO_URI"] = "mongodb://localhost:27017/VTO"
@@ -76,7 +76,7 @@ def register():
         'username': data['username'],
         'email': data['email'],
         'password': hashed_password,
-        'adress':data['adress'],
+        'address':data['address'],
         'phone':data['phone'],
         'role': 'user',  # Default role
         'created_at': datetime.now(timezone.utc)
@@ -97,7 +97,7 @@ def login():
         'exp': datetime.now(timezone.utc) + timedelta(hours=24)
     }, app.config['SECRET_KEY'])
 
-    return jsonify({'token': token})
+    return jsonify({'token': token}),200
 
 # Admin: Add clothing
 @app.route('/admin/clothing', methods=['POST'])
