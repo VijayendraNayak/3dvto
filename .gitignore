@@ -23,3 +23,5 @@ build/
 .vscode/
 
 pending.txt
+
+# .env

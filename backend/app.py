@@ -6,14 +6,19 @@ from functools import wraps
 import jwt
 from datetime import datetime, timedelta, timezone
 from flask_cors import CORS
+from dotenv import load_dotenv
+import os
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # Allow all origins
+frontend_url = os.getenv('FRONTEND_URL')
+mongo_url=os.getenv('MONGO_URL') 
+secret_key=os.getenv('SECRET_KEY')
+CORS(app, resources={r"/*": {"origins": frontend_url}})
 
 # Configuration
-app.config["MONGO_URI"] = "mongodb://localhost:27017/VTO"
-app.config['SECRET_KEY'] = 'Chandan love Kiara'  # Change to a secure secret key
+app.config["MONGO_URI"] = mongo_url
+app.config['SECRET_KEY'] = secret_key  # Change to a secure secret key
 
 try:
     mongo = PyMongo(app)
@@ -97,7 +102,7 @@ def login():
         'exp': datetime.now(timezone.utc) + timedelta(hours=24)
     }, app.config['SECRET_KEY'])
 
-    return jsonify({'token': token}),200
+    return jsonify({'token': token, 'role': user['role']}), 200
 
 # Admin: Add clothing
 @app.route('/admin/clothing', methods=['POST'])
