@@ -67,7 +67,7 @@ const page: React.FC = () => {
 
     try {
       toast.loading("Registering user...");
-      const response = await axios.post("http://127.0.0.1:5000/register", formData);
+      const response = await axios.post("/api/register", formData);
       
       if (response.status === 201) {
         toast.success("Registration successful! Redirecting to login...", {
