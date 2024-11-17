@@ -1,9 +1,21 @@
 "use client";
 import React, { useState } from "react";
 import "./register.css";
-import Link from "next/link";
+import Link from 'next/link';
+import { VscEye } from "react-icons/vsc";
+import { VscEyeClosed } from "react-icons/vsc";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
+
 
 const page: React.FC = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [color, setColor] = useState<string>("rgba(255, 255, 255, 0.8)");
+  const [iseyevis,setIseyevis]=useState(false);
+  const router=useRouter();
+
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -17,11 +29,42 @@ const page: React.FC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     // Handle the registration logic here
     console.log("Registering with", formData);
+
+    if (!formData.username || !formData.email || !formData.password || !formData.address || !formData.phone) {
+      alert("Please fill in all fields");
+      return;
+    }
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/register", formData);
+      if (response.status === 201) {
+        alert("User registered successfully!");
+        router.push('/pages/login');
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          address: "", // Corrected typo here
+          phone: "",
+        });
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred.");
+      }
+    }
+
   };
+  
+  const handleEyeclick=()=>{
+    setIseyevis(!iseyevis);
+  }
 
   return (
     <div className="flex items-center justify-center h-screen w-full relative mt-10">
@@ -88,7 +131,7 @@ const page: React.FC = () => {
                 Phone Number
               </label>
               <input
-                type="tel"
+                type="text"
                 id="phone"
                 name="phone"
                 value={formData.phone}
@@ -111,6 +154,7 @@ const page: React.FC = () => {
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
+
                 className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
                 placeholder="Enter your address"
               />
@@ -132,6 +176,27 @@ const page: React.FC = () => {
                 className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
                 placeholder="Enter your password"
               />
+
+              <div className="relative">
+                <input
+                  type={!iseyevis?"password":"text"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                  placeholder="Enter your password"
+                />
+                <VscEye
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${iseyevis?"flex":"hidden"} cursor-pointer`}
+                  onClick={handleEyeclick}
+                />
+                <VscEyeClosed
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${iseyevis?"hidden":"flex"} cursor-pointer`}
+                  onClick={handleEyeclick}
+                />
+              </div>
+
             </div>
 
             <button
