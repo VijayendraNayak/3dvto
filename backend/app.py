@@ -97,12 +97,22 @@ def login():
     if not user or not check_password_hash(user['password'], data['password']):
         return jsonify({'message': 'Invalid credentials'}), 401
 
+    # Generate token
     token = jwt.encode({
         'user_id': str(user['_id']),
         'exp': datetime.now(timezone.utc) + timedelta(hours=24)
     }, app.config['SECRET_KEY'])
 
-    return jsonify({'token': token, 'role': user['role']}), 200
+    # Filter user data to exclude sensitive information
+    user_data = {
+        "id": str(user["_id"]),
+        "name": user.get("username"),
+        "email": user.get("email"),
+        "role": user.get("role"),  # Include fields relevant for the client
+        # Add any other non-sensitive fields needed by the frontend
+    }
+
+    return jsonify({'token': token, 'data': user_data}), 200
 
 # Admin: Add clothing
 @app.route('/admin/clothing', methods=['POST'])
