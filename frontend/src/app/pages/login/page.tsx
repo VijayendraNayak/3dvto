@@ -1,14 +1,13 @@
-"use client"
-import React, { useState, useEffect } from "react";
+"use client";
+import React, { useState } from "react";
 import "./login.css";
-import Link from 'next/link';
-
+import Link from "next/link";
 
 const page: React.FC = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [color, setColor] = useState<string>("rgba(255, 255, 255, 0.8)");
-
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -21,76 +20,49 @@ const page: React.FC = () => {
     console.log("Logging in with", formData);
   };
 
-
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      setMousePosition({ x: event.clientX, y: event.clientY });
-
-      // Change color dynamically based on mouse position
-      const red = (event.clientX / window.innerWidth) * 255;
-      const green = (event.clientY / window.innerHeight) * 255;
-      const blue = 255 - (red + green) / 2; // Create a dynamic effect based on mouse position
-
-      setColor(`rgb(${red}, ${green}, ${blue})`);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
   return (
-    <div id="app" className="relative w-full h-screen">
-      {/* Color Follower with Dynamic Color */}
-      <div
-        className="color-follower"
-        style={{
-          left: `${mousePosition.x}px`,
-          top: `${mousePosition.y}px`,
-          background: color, // Dynamic color based on mouse position
-        }}
-      ></div>
+    <div className="flex items-center justify-center h-screen w-full relative">
+      {/* Card Container - Adjusting width and z-index */}
+      <div className="flex flex-col sm:flex-row w-full sm:w-4/5 lg:w-2/3 xl:w-1/2 bg-gradient-to-r from-indigo-700 to-purple-900 rounded-lg relative z-10">
+        
+        {/* Left Section (Image) */}
+        <div className="flex justify-center items-center w-full rounded-l-lg p-6  md:block lg:block xl:block">
+          <img
+            src="/login.png" 
+            alt="Virtual Try On"
+            className="h-100 hidden md:block lg:block xl:block"
+          />
+        </div>
 
-      {/* Main Content */}
-      <div
-        className="absolute text-black text-center"
-        style={{
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div className="card bg-transparent shadow-lg rounded-lg p-6 sm:p-8 w-11/12 sm:w-96 border border-gray-300 cursor-pointer">
-          <h1 className="font-sans-serif text-sm sm:text-lg md:text-2xl lg:text-3xl xl:text-4xl uppercase tracking-wide font-bold">
-            Login to Your Account
-          </h1>
-
-          {/* Login Form */}
+        {/* Right Section (Form) */}
+        <div className="flex flex-col justify-center items-center xl:w-full lg:w-1/2 sm:w-1/2 bg-transparent rounded-r-lg p-5">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 text-center">
+            Log in to Virtual Try On
+          </h2>
           <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-4">
+
             <div>
               <label
-                htmlFor="username"
-                className="text-sm sm:text-md font-sans-serif text-left block"
+                htmlFor="email"
+                className="text-sm sm:text-md font-sans-serif text-left block text-white font-bold"
               >
-                Username
+                Email
               </label>
               <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
-                placeholder="Enter your username"
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
+                placeholder="Enter your email"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="text-sm sm:text-md block font-sans-serif text-left"
+                className="text-sm sm:text-md block font-sans-serif text-left text-white font-bold"
               >
                 Password
               </label>
@@ -100,7 +72,7 @@ const page: React.FC = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
                 placeholder="Enter your password"
               />
             </div>
@@ -109,17 +81,18 @@ const page: React.FC = () => {
               type="submit"
               className="w-full px-4 py-2 mt-4 bg-gradient-to-r from-purple-500 to-violet-300 text-white rounded-lg hover:from-purple-600 hover:to-violet-400"
             >
-              Log In
+             Login
             </button>
           </form>
 
-          <Link href="/pages/register" className="mt-6 sm:mt-10 text-xs sm:text-sm p-3">
-            Don't have an account?
-          </Link>
+          <div className="mt-2 text-center">
+            <Link href="/pages/register" className="text-sm text-white hover:underline">
+              Create new account?
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-
   );
 };
 
