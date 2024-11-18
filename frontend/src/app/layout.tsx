@@ -1,8 +1,8 @@
 "use client"
 import localFont from "next/font/local";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Background from "./components/Background";
+import Navbar from "../components/Navbar";
+import Background from "../components/Background";
 import { Provider } from "react-redux";
 import { store } from "../../store";
 

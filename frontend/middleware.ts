@@ -15,13 +15,6 @@ export function middleware(req: NextRequest) {
     '/login',
     '/register',
     '/',
-    '/api/login',
-    '/api/register',
-    'http://localhost:3000/login',
-    'http://localhost:3000/register',
-    'http://localhost:3000/',
-    'http://localhost:3000/api/login',
-    'http://localhost:3000/api/register'
   ]
 
   // Check if the current path is a public route
@@ -42,18 +35,18 @@ export function middleware(req: NextRequest) {
     const decodedToken = jwt.verify(token, secretKey) as { userId: string }
 
     // Allow access to profile page only for authenticated users
-    if (url.pathname.startsWith('http://localhost:3000/pages/profile')) {
+    if (url.pathname.startsWith('/profile')) {
       return NextResponse.next()
     }
 
     // Redirect non-authenticated users away from protected routes
     if (!decodedToken.userId) {
       console.log('User not authenticated, redirecting')
-      return NextResponse.redirect(new URL('http://localhost:3000/pages/login', req.url))
+      return NextResponse.redirect(new URL('/login', req.url))
     }
   } catch (error) {
     console.error('JWT verification failed:', error)
-    return NextResponse.redirect(new URL('http://localhost:3000/pages/login', req.url))
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
   return NextResponse.next()
@@ -61,15 +54,9 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Protected routes
-    'http://localhost:3000/pages/profile/:path*',
-    'http://localhost:3000/pages/profile',
-    'http://localhost:3000/pages/admin/:path*',
-    'http://localhost:3000/pages/admin',
-    'http://localhost:3000/pages/cart/:path*',
-    'http://localhost:3000/pages/cart',
-    'http://localhost:3000/pages/contact/:path*',
-    'http://localhost:3000/pages/contact',
-    '/api/:path*'
+    '/profile/:path*',
+    '/profile',
+    '/admin/:path*',
+    '/cart/:path*',
   ]
 }
