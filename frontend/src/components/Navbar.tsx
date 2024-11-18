@@ -40,7 +40,7 @@ const Navbar = (props: Props) => {
             {!isAuthenticated ? (
                 <div>
                     <Link
-                        href="/pages/login"
+                        href="/login"
                         className="p-3 bg-purple-500 shadow-lg hover:shadow-xl hover:bg-purple-600 flex cursor-pointer items-center gap-2 rounded-xl px-6 text-white font-sans font-semibold"
                     >
                         <FaPowerOff /> Login
@@ -50,7 +50,7 @@ const Navbar = (props: Props) => {
                 <div className="flex gap-16 items-center cursor-pointer">
                     <div
                         className="flex gap-2"
-                        onClick={() => { router.push('/pages/profile') }}
+                        onClick={() => { router.push('/profile') }}
                     >
                         <CgProfile className="text-3xl font-semibold" />
                         <span className="text-xl">{user?.name}</span>
