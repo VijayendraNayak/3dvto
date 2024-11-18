@@ -13,19 +13,19 @@ const page = () => {
         <nav className="mt-2">
           <ul className="space-y-4">
             <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/pages/admin/dashboard">Dashboard</Link>
+              <Link href="/admin/dashboard">Dashboard</Link>
             </li>
             <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/pages/admin/add">Add Stock</Link>
+              <Link href="/admin/add">Add Stock</Link>
             </li>
             <li className="px-4 py-2 hover:bg-blue-700">
-              <a href="/pages/admin/delete">Delete Stock</a>
+              <Link href="/admin/delete">Delete Stock</Link>
             </li>
             <li className="px-4 py-2 hover:bg-blue-700">
-              <a href="/pages/admin/updateitem">Update Stock</a>
+              <Link href="/admin/updateitem">Update Stock</Link>
             </li>
             <li className="px-4 py-2 hover:bg-blue-700">
-              <a href="/pages/admin/manage">Manage Stock</a>
+              <Link href="/admin/manage">Manage Stock</Link>
             </li>
           </ul>
         </nav>
