@@ -73,7 +73,7 @@ const page: React.FC = () => {
           password: ""
         })
         dispatch(login({email: data.email,id:data.id,role:data.role,name:data.name}));
-        Cookies.set("loggedIn","true");
+        Cookies.set("loggedin","true");
         
       }
     } catch (error) {
