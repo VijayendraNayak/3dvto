@@ -20,9 +20,9 @@ const page: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center px-4 mt-16">
+    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center px-4 mt-10">
       {/* Profile Section */}
-      <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-md text-center relative shadow-black">
+      <div className="bg-white shadow-md rounded-xl p-6 w-full max-w-md text-center relative shadow-black">
         {/* Avatar */}
         <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
           <img
