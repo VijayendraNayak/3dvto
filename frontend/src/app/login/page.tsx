@@ -15,6 +15,7 @@ const page: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const [iseyevis, setIseyevis] = useState(false);
+  const [isrole, setIsrole] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -30,6 +31,7 @@ const page: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields", {
         position: "top-center",
@@ -37,7 +39,7 @@ const page: React.FC = () => {
       });
       return;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error("Please enter a valid email address", {
@@ -54,31 +56,44 @@ const page: React.FC = () => {
       });
       return;
     }
+
     try {
-      toast.loading("loging the user...")
-      const response = await axios.post("/api/login", formData)
-      const data=response.data.data;
-      console.log(data)
+      toast.loading("Logging in the user...");
+      const response = await axios.post("/api/login", formData);
+      const data = response.data.data;
+
       if (response.status === 200) {
+        // Set cookies
+        Cookies.set("loggedin", "true", {
+          expires: 7, // Cookie will expire in 7 days
+          path: "/", // Cookie accessible across the site
+        });
+        Cookies.set("role", data.role, {
+          expires: 7, // Cookie will expire in 7 days
+          path: "/", // Cookie accessible across the site
+        });
+
         toast.success("Login successful! Redirecting to the home page...", {
           position: "top-center",
-          duration: 2000
-        })
+          duration: 2000,
+        });
+
         setTimeout(() => {
-          if (data.role === "admin") router.push("/admin/dashboard")
-            else router.push("/")
-        },2000)
+          if (data.role === "admin") router.push("/admin/dashboard");
+          else router.push("/");
+        }, 2000);
+
         setFormData({
           email: "",
-          password: ""
-        })
-        dispatch(login({email: data.email,id:data.id,role:data.role,name:data.name}));
-        Cookies.set("loggedin","true");
-        
+          password: "",
+        });
+
+        // Dispatch login state to Redux
+        dispatch(login({ email: data.email, id: data.id, role: data.role, name: data.name }));
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        toast.error(error.response.data.message || "Registration failed", {
+        toast.error(error.response.data.message || "Login failed", {
           position: "top-center",
           duration: 3000,
         });
@@ -90,6 +105,7 @@ const page: React.FC = () => {
       }
     }
   };
+
 
   return (
     <div className="flex items-center justify-center h-screen w-full relative">
