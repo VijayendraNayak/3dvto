@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
@@ -9,11 +9,12 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 
-
+# Load environment variables
+load_dotenv()
 app = Flask(__name__)
 frontend_url = os.getenv('FRONTEND_URL')
-mongo_url=os.getenv('MONGO_URL') 
-secret_key=os.getenv('SECRET_KEY')
+mongo_url = os.getenv('MONGO_URL')
+secret_key = os.getenv('SECRET_KEY')
 CORS(app, resources={r"/*": {"origins": frontend_url}})
 
 # Configuration
@@ -41,10 +42,11 @@ def home():
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        print(request.headers)  # Debug: Print headers
         token = None
         if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]
+            auth_header = request.headers['Authorization'].split()
+            if len(auth_header) == 2 and auth_header[0] == "Bearer":
+                token = auth_header[1]
         
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
@@ -52,13 +54,16 @@ def token_required(f):
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             current_user = mongo.db.users.find_one({'_id': ObjectId(data['user_id'])})
-        except Exception as e:
-            print(f"JWT decode error: {e}")  # Debug: Print decode error
+            if not current_user:
+                return jsonify({'message': 'User not found'}), 404
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired'}), 401
+        except jwt.InvalidTokenError as e:
+            print(f"JWT decode error: {e}")  # Debugging
             return jsonify({'message': 'Token is invalid'}), 401
         
         return f(current_user, *args, **kwargs)
     return decorated
-
 
 # Admin required decorator
 def admin_required(f):
@@ -81,8 +86,8 @@ def register():
         'username': data['username'],
         'email': data['email'],
         'password': hashed_password,
-        'address':data['address'],
-        'phone':data['phone'],
+        'address': data['address'],
+        'phone': data['phone'],
         'role': 'user',  # Default role
         'created_at': datetime.now(timezone.utc)
     }
@@ -90,6 +95,7 @@ def register():
     return jsonify({'message': 'User registered successfully'}), 201
 
 # Login and generate token
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -100,6 +106,7 @@ def login():
     # Generate token
     token = jwt.encode({
         'user_id': str(user['_id']),
+        'role': user['role'],
         'exp': datetime.now(timezone.utc) + timedelta(hours=24)
     }, app.config['SECRET_KEY'])
 
@@ -109,10 +116,14 @@ def login():
         "name": user.get("username"),
         "email": user.get("email"),
         "role": user.get("role"),  # Include fields relevant for the client
-        # Add any other non-sensitive fields needed by the frontend
     }
 
-    return jsonify({'token': token, 'data': user_data}), 200
+    # Set token as a secure, HttpOnly cookie
+    response = make_response(jsonify({'token': token, 'data': user_data}))
+    response.set_cookie('authToken', token, httponly=True, secure=True, samesite='Lax')
+
+    return response, 200
+
 
 # Admin: Add clothing
 @app.route('/admin/clothing', methods=['POST'])
