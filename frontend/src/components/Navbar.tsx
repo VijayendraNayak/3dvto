@@ -50,7 +50,7 @@ const Navbar = (props: Props) => {
                 <div className="flex gap-16 items-center cursor-pointer">
                     <div
                         className="flex gap-2"
-                        onClick={() => { router.push('/pages/profile') }}
+                        onClick={() => { router.push('/profile') }}
                     >
                         <CgProfile className="text-3xl font-semibold" />
                         <span className="text-xl">{user?.name}</span>
