@@ -1,8 +1,9 @@
-// app/pages/403/page.tsx
 "use client";
-import Link from 'next/link';
+
+import { useRouter } from "next/navigation";
 
 export default function ForbiddenPage() {
+  const router=useRouter()
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center p-8 bg-white rounded-lg shadow-md">
@@ -13,12 +14,10 @@ export default function ForbiddenPage() {
         <p className="text-gray-600 mb-8">
           Sorry, you don't have permission to access this page.
         </p>
-        <Link 
-          href="/"
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          Return Home
-        </Link>
+        <button 
+        className="px-4 rounded-full py-2 bg-purple-500 hover:bg-purple-600 " onClick={()=>router.push("/")}>
+          return home
+        </button>
       </div>
     </div>
   );
