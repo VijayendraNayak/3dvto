@@ -114,7 +114,7 @@ export default function Home() {
   {/* Second Section */}
   <section
     id="second-section"
-    className="relative min-h-screen bg-gray-50 flex items-center justify-center mt-20 px-4"
+    className="relative min-h-screen bg-gray-400 bg-opacity-30 flex items-center justify-center mt-20 px-4"
   >
     <div className="relative max-w-4xl mx-auto px-4 py-16 sm:px-8 md:px-12 lg:py-20">
       <h2 className="text-2xl md:text-4xl font-bold text-center mb-8">
