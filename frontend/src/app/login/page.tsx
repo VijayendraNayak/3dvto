@@ -7,7 +7,7 @@ import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import { Toaster, toast } from 'sonner';
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { login } from "../../../../store/slices/authSlice";
+import { login } from "../../../store/slices/authSlice";
 import Cookies from 'js-cookie';
 
 
