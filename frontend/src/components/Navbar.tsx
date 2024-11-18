@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { FaPowerOff } from "react-icons/fa";
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../store";
+import { RootState } from "../../store";
 import { CgProfile } from "react-icons/cg";
 import { FaCartShopping } from "react-icons/fa6";
 import { useRouter } from "next/navigation";
