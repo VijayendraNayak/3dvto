@@ -8,6 +8,7 @@ import { Toaster, toast } from 'sonner';
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { login } from "../../../../store/slices/authSlice";
+import Cookies from 'js-cookie';
 
 
 const page: React.FC = () => {
@@ -72,6 +73,8 @@ const page: React.FC = () => {
           password: ""
         })
         dispatch(login({email: data.email,id:data.id,role:data.role,name:data.name}));
+        Cookies.set("loggedIn","true");
+        
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
