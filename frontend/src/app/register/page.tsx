@@ -76,7 +76,7 @@ const page: React.FC = () => {
         });
         
         setTimeout(() => {
-          router.push('/pages/login');
+          router.push('/login');
         }, 2000);
 
         setFormData({

@@ -65,7 +65,7 @@ const page: React.FC = () => {
           duration: 2000
         })
         setTimeout(() => {
-          if (data.role === "admin") router.push("/pages/admin/dashboard")
+          if (data.role === "admin") router.push("/admin/dashboard")
             else router.push("/")
         },2000)
         setFormData({
@@ -169,7 +169,7 @@ const page: React.FC = () => {
           </form>
 
           <div className="mt-2 text-center">
-            <Link href="/pages/register" className="text-sm text-yellow-600 hover:underline">
+            <Link href="/register" className="text-sm text-yellow-600 hover:underline">
               Create new account?
             </Link>
           </div>
