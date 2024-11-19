@@ -56,7 +56,7 @@ const Navbar = (props: Props) => {
                         <span className="text-xl">{user?.name}</span>
                     </div>
                     <div
-                        onClick={() => { router.push('/pages/profile') }}
+                        onClick={() => { router.push('/profile') }}
                     >
                         <FaCartShopping className="text-3xl font-semibold" />
                     </div>

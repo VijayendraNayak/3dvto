@@ -221,7 +221,7 @@ const page: React.FC = () => {
             </form>
 
             <div className="text-center p-1">
-              <Link href="/pages/login" className="text-sm text-yellow-600 hover:underline">
+              <Link href="/login" className="text-sm text-yellow-600 hover:underline">
                 Already have an account? Log in
               </Link>
             </div>
