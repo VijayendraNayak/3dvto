@@ -1,33 +1,23 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../store";
 
 const page: React.FC = () => {
-  const [user, setUser] = useState({
-    username: "",
-    email: "",
-    phone: "",
-    address: "",
-  });
-
-  useEffect(() => {
-    // fetching user details from a backend
-    
-  }, []);
-
   const handleLogout = () => {
     // Clear all cookies
-    document.cookie.split(";").forEach(function(c) {
+    document.cookie.split(";").forEach(function (c) {
       document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
-  
+
     localStorage.clear();
-  
+
     sessionStorage.clear();
-  
+
     window.location.href = '/';
-  
-    console.log("User logged out");
+
   };
+  const user = useSelector((state: RootState) => state.auth.user);
+  console.log(user)
 
   return (
     <div className="min-h-screen bg-transparent flex flex-col items-center justify-center px-4 mt-10">
@@ -44,7 +34,7 @@ const page: React.FC = () => {
 
         <div className="mt-20 space-y-4">
           {/* Username */}
-          <h2 className="text-xl font-bold text-gray-800">{user.username || "Loading..."}</h2>
+          <h2 className="text-xl font-bold text-gray-800">{user.name || "Loading..."}</h2>
 
           {/* User Details */}
           <div className="text-left mt-6 space-y-2">
@@ -56,21 +46,28 @@ const page: React.FC = () => {
               <span className="font-medium">Phone:</span>
               <span>{user.phone || "Loading..."}</span>
             </div>
-            <div className="flex justify-between text-gray-600">
-              <span className="font-medium">Address:</span>
-              <span className="text-right">{user.address || "Loading..."}</span>
-            </div>
-          </div>
-      </div>
+            {
+              user.role === "admin" ? (
+                <div></div>
+              ) : (
+                <div className="flex justify-between text-gray-600">
+                  <span className="font-medium">Address:</span>
+                  <span className="text-right">{user.address || "Loading..."}</span>
+                </div>
+              )
+            }
 
-      {/* Logout Button */}
-      <button
-        onClick={handleLogout}
-        className="mt-8 bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600"
-      >
-        Logout
-      </button>
-    </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="mt-8 bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 };

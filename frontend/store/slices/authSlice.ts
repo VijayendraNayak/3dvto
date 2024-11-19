@@ -8,6 +8,8 @@ interface AuthState {
     id:string;
     name:string;
     role:string;
+    phone:string;
+    address:string;
   } | null;
 }
 

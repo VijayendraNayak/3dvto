@@ -15,7 +15,6 @@ const page: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const [iseyevis, setIseyevis] = useState(false);
-  const [isrole, setIsrole] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -87,9 +86,10 @@ const page: React.FC = () => {
           email: "",
           password: "",
         });
+        console.log(response)
 
         // Dispatch login state to Redux
-        dispatch(login({ email: data.email, id: data.id, role: data.role, name: data.name }));
+        dispatch(login({ email: data.email, id: data.id, role: data.role, name: data.name,phone:data.phone,address:data.address }));
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
