@@ -15,8 +15,18 @@ const page: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
+    // Clear all cookies
+    document.cookie.split(";").forEach(function(c) {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+  
+    localStorage.clear();
+  
+    sessionStorage.clear();
+  
+    window.location.href = '/';
+  
     console.log("User logged out");
-    // Add logout functionality
   };
 
   return (
