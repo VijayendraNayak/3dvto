@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Role-based access control
-  if (url.pathname.startsWith('/profile') && role !== 'user') {
+  if (url.pathname.startsWith('/profile') && role !== 'user'&& role!=="admin") {
     console.log('Unauthorized access to /profile, redirecting to /unauthorized');
     return NextResponse.redirect(new URL('/unauthorized', request.url));
   }
