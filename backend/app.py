@@ -116,7 +116,10 @@ def login():
         "name": user.get("username"),
         "email": user.get("email"),
         "role": user.get("role"),  # Include fields relevant for the client
+        "phone":user.get("phone"),
+        "address":user.get("address")
     }
+    # console.log(user_data)
 
     # Set token as a secure, HttpOnly cookie
     response = make_response(jsonify({'token': token, 'data': user_data}))
