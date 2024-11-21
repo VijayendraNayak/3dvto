@@ -22,8 +22,8 @@ CORS(app, resources={r"/*": {"origins": frontend_url}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-NGROK_URL = "https://7399-103-62-150-78.ngrok-free.app"
+REMOVE_BG_KEY = os.getenv("REMOVE_BG_API_KEY")
+NGROK_URL = os.getenv("MESHY_KEY")
 
 # Configuration
 app.config["MONGO_URI"] = mongo_url
@@ -81,6 +81,24 @@ def admin_required(f):
             return jsonify({'message': 'Admin privileges required'}), 403
         return f(current_user, *args, **kwargs)
     return decorated
+
+def remove_background(file_path):
+    with open(file_path, 'rb') as image_file:
+        response = requests.post(
+            'https://api.remove.bg/v1.0/removebg',
+            files={'image_file': image_file},
+            data={'size': 'auto'},
+            headers={'X-Api-Key': REMOVE_BG_KEY},
+        )
+    if response.status_code == 200:
+        no_bg_path = file_path.replace(".jpg", "_no_bg.png").replace(".jpeg", "_no_bg.png").replace(".png", "_no_bg.png")
+        with open(no_bg_path, 'wb') as out_file:
+            out_file.write(response.content)
+        return no_bg_path  # Return the new file path
+    else:
+        print("Error removing background:", response.text)
+        return None
+
 
 # Register a user
 @app.route('/register', methods=['POST'])
