@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Sidebar from "@/components/Admin_sidebar";
 
 // Define the shape of the cloth details object
 interface ClothDetails {
@@ -83,30 +84,7 @@ const UpdateStock = () => {
   return (
     <div className="relative flex min-h-screen bg-transparent">
       {/* Sidebar */}
-      <aside className="relative w-64 bg-blue-800 text-white z-10">
-        <div className="p-6 text-center">
-          <h1 className="text-lg font-bold mt-20">Admin Panel</h1>
-        </div>
-        <nav className="mt-2">
-          <ul className="space-y-4">
-            <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/admin/dashboard">Dashboard</Link>
-            </li>
-            <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/admin/add">Add Stock</Link>
-            </li>
-            <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/admin/delete">Delete Stock</Link>
-            </li>
-            <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/admin/updateitem">Update Stock</Link>
-            </li>
-            <li className="px-4 py-2 hover:bg-blue-700">
-              <Link href="/admin/manage">Manage Stock</Link>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+      <Sidebar/>
 
       {/* Main Content */}
       <main className="flex-1 p-6 mt-20">
