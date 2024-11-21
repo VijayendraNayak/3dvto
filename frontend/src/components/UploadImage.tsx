@@ -20,7 +20,8 @@ const UploadImage = (props: Props) => {
             return;
         }
 
-        if (file.type === "image/jpeg") {
+        // Check if the file is an image
+        if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = function (e: ProgressEvent<FileReader>) {
                 if (e.target && e.target.result) {
@@ -31,11 +32,11 @@ const UploadImage = (props: Props) => {
             };
             reader.readAsDataURL(file);
         } else {
-            // Show an error message for invalid files
+            // Show an error message for non-image files
             previewImage.classList.add("hidden");
             previewImage.src = "";
             errorMessage.classList.remove("hidden");
-            errorMessage.textContent = "Only JPEG images are allowed.";
+            errorMessage.textContent = "Only image files are allowed.";
         }
     }
 
@@ -50,6 +51,7 @@ const UploadImage = (props: Props) => {
             previewImage.src = "";
         }
     }
+
     return (
         <section
             id="second-section"
@@ -68,7 +70,7 @@ const UploadImage = (props: Props) => {
                             className="mb-4 w-12 md:w-16 h-12 md:h-16 sm:ml-16 lg:ml-28"
                         />
                         <p className="text-sm md:text-base text-gray-500 mb-4">
-                            Drag a JPEG image here or click to upload
+                            Drag an image here or click to upload
                         </p>
                         <label
                             htmlFor="image-upload"
@@ -79,7 +81,7 @@ const UploadImage = (props: Props) => {
                         <input
                             id="image-upload"
                             type="file"
-                            accept=".jpeg, .jpg"
+                            accept="image/*"
                             className="hidden"
                             onChange={(e) => handleImageUpload(e)}
                         />
@@ -87,7 +89,7 @@ const UploadImage = (props: Props) => {
 
                     {/* Error Message */}
                     <p id="error-message" className="hidden text-red-500 mt-4 text-sm">
-                        Please upload a valid JPEG image.
+                        Please upload a valid image file.
                     </p>
 
                     {/* Image Preview */}
