@@ -1,13 +1,15 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response,send_from_directory
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
-from functools import wraps
-import jwt
-from datetime import datetime, timedelta, timezone
 from flask_cors import CORS
 from dotenv import load_dotenv
+from functools import wraps
+import jwt
+import time
+from datetime import datetime, timedelta, timezone
 import os
+import requests
 
 # Load environment variables
 load_dotenv()
@@ -15,7 +17,13 @@ app = Flask(__name__)
 frontend_url = os.getenv('FRONTEND_URL')
 mongo_url = os.getenv('MONGO_URL')
 secret_key = os.getenv('SECRET_KEY')
+API_KEY = os.getenv("MESHY_KEY")
 CORS(app, resources={r"/*": {"origins": frontend_url}})
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+NGROK_URL = "https://7399-103-62-150-78.ngrok-free.app"
 
 # Configuration
 app.config["MONGO_URI"] = mongo_url
@@ -163,6 +171,96 @@ def log_admin_action(admin_id, action_type, collection_name, record_id, changes)
         'action_timestamp': datetime.now(timezone.utc).isoformat()
     }
     mongo.db.admin_audit_logs.insert_one(log)
+    
+# Function to create a 3D model task
+def create_3d_model(image_url):
+    url = "https://api.meshy.ai/v1/image-to-3d"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "image_url": image_url,
+        "enable_pbr": True,
+        "ai_model": "meshy-4"
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+
+    if response.status_code == 202:
+        task_id = response.json()['result']
+        return {"success": True, "task_id": task_id}
+    else:
+        return {"success": False, "error": response.json(), "status_code": response.status_code}
+
+# Function to poll the task status
+def check_task_status(task_id):
+    url = f"https://api.meshy.ai/v1/image-to-3d/{task_id}"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+    }
+
+    while True:
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            result = response.json()
+            if result['status'] in ['SUCCEEDED', 'FAILED', 'EXPIRED']:
+                return {"success": True, "result": result}
+        else:
+            return {"success": False, "error": response.json(), "status_code": response.status_code}
+
+        time.sleep(5)
+
+# API to create a 3D model task
+@app.route('/api/create-3d-model', methods=['POST'])
+def api_create_3d_model():
+    data = request.get_json()
+    if not data or 'image_url' not in data:
+        return jsonify({"success": False, "message": "Invalid request. 'image_url' is required"}), 400
+
+    image_url = data['image_url']
+    result = create_3d_model(image_url)
+
+    if result["success"]:
+        return jsonify({"success": True, "task_id": result["task_id"]}), 202
+    else:
+        return jsonify({"success": False, "error": result["error"]}), result["status_code"]
+
+# API to check task status
+@app.route('/api/check-task-status/<task_id>', methods=['GET'])
+def api_check_task_status(task_id):
+    result = check_task_status(task_id)
+
+    if result["success"]:
+        return jsonify({"success": True, "result": result["result"]})
+    else:
+        return jsonify({"success": False, "error": result["error"]}), result["status_code"]
+
+# File upload endpoint
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    if file:
+        # Save the file locally
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(file_path)
+        
+        # Generate a public download link using ngrok
+        public_url = f"{NGROK_URL}/uploads/{file.filename}"
+        return jsonify({"message": "File uploaded successfully!", "download_url": public_url})
+
+# Serve uploaded files
+@app.route('/uploads/<filename>')
+def serve_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 # Error handlers
 @app.errorhandler(404)
