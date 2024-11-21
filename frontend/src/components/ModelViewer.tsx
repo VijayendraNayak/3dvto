@@ -62,7 +62,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({
         modelRef.current = model;
       },
       undefined,
-      (error) => console.error('An error occurred loading the model:', error)
+      // (error) => console.error('An error occurred loading the model:', error)
     );
 
     // Animation loop

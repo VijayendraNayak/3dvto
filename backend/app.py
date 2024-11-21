@@ -22,8 +22,8 @@ CORS(app, resources={r"/*": {"origins": frontend_url}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-REMOVE_BG_KEY = os.getenv("REMOVE_BG_API_KEY")
-NGROK_URL = os.getenv("MESHY_KEY")
+REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
+NGROK_URL = os.getenv("NGROK_URL")
 
 # Configuration
 app.config["MONGO_URI"] = mongo_url
@@ -256,6 +256,7 @@ def api_check_task_status(task_id):
         return jsonify({"success": False, "error": result["error"]}), result["status_code"]
 
 # File upload endpoint
+# File upload endpoint
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -266,12 +267,17 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
     
     if file:
-        # Save the file locally
+        # Save the original file
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(file_path)
         
+        # Remove the background from the image
+        no_bg_path = remove_background(file_path)
+        if not no_bg_path:
+            return jsonify({"error": "Failed to remove background"}), 500
+        
         # Generate a public download link using ngrok
-        public_url = f"{NGROK_URL}/uploads/{file.filename}"
+        public_url = f"{NGROK_URL}/uploads/{os.path.basename(no_bg_path)}"
         return jsonify({"message": "File uploaded successfully!", "download_url": public_url})
 
 # Serve uploaded files
