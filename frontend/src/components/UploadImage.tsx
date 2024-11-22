@@ -80,6 +80,7 @@ const UploadImage: React.FC = () => {
                                 setResult(data.result);
                                 if (taskStatus === "SUCCEEDED") {
                                     const newModelUrl = data.result.model_url;
+                                    console.log(data.result)
                                     setModelUrl(newModelUrl);
                                     setShowModelPopup(true); // Show popup when model is ready
                                 }
