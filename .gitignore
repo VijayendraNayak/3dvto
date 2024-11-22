@@ -27,4 +27,4 @@ build/
 
 pending.txt
 
-# .env
+.env
