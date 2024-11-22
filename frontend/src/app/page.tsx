@@ -1,6 +1,6 @@
 'use client';
 
-import UploadImage from "@/components/UploadImage";
+import UploadImage from "../components/UploadImage"
 import Image from "next/image";
 import { useEffect } from "react";
 
