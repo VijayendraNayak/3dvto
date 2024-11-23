@@ -29,4 +29,3 @@ pending.txt
 
 .env
 backend/serviceAccountKey.json
-.gitignore
