@@ -28,4 +28,4 @@ build/
 pending.txt
 
 .env
-serviceAccountKey.json
+backend/serviceAccountKey.json
