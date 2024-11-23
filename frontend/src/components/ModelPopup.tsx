@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import ModelViewer from './ModelViewer'; // Assuming ModelViewer is in the same directory
 
 type ModelPopupProps = {

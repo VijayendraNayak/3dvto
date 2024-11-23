@@ -46,8 +46,8 @@ const UploadImage: React.FC = () => {
                     "Content-Type": "multipart/form-data",
                 },
             });
-
-            const uploadUrl = uploadResponse.data.download_url;
+            console.log(uploadResponse.data.url)
+            const uploadUrl = uploadResponse.data.url;
 
             if (uploadUrl) {
                 // Step 2: Create 3D model
