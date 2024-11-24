@@ -4,12 +4,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 from flask_cors import CORS
 from dotenv import load_dotenv
-<<<<<<< HEAD
 from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import credentials, storage
-=======
->>>>>>> origin/main
 from functools import wraps
 import jwt
 import time
