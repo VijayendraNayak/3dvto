@@ -1,205 +1,203 @@
 "use client";
 import React, { useState } from "react";
-import Link from "next/link";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Sidebar from "@/components/Admin_sidebar";
+import axios from "axios";
+import Admin_sidebar from "../../../components/Admin_sidebar";
+import Card from "@/components/Card";
 
-// Define the shape of the cloth details object
-interface ClothDetails {
-  clothId: string;
-  clothType: string;
-  size: string;
-  color: string;
-  stock: number;
-  price: number;
+interface SearchParams {
+  name?: string;
+  category?: string;
+  id?: string;
+  color?: string;
+  size?: string;
 }
 
-// Mock function to simulate fetching cloth details from an API
-const fetchClothDetails = async (clothId: string): Promise<ClothDetails> => {
-  const mockClothData: ClothDetails = {
-    clothId: "12345",
-    clothType: "T-Shirt",
-    size: "M",
-    color: "Red",
-    stock: 50,
-    price: 25.99,
-  };
-  return new Promise((resolve) => setTimeout(() => resolve(mockClothData), 1000));
-};
+interface ClothItem {
+  _id: string;
+  name: string;
+  category: string;
+  price: string;
+  color: string;
+  sizes: string;
+  stock: string;
+  thumbnail_path: string;
+}
 
-// Mock function to simulate updating cloth details in a database
-const updateCloth = async (clothDetails: ClothDetails) => {
-  console.log(`Cloth with ID ${clothDetails.clothId} updated:`, clothDetails);
-};
-
-const UpdateStock = () => {
-  const [clothId, setClothId] = useState<string>(""); // To capture input cloth ID
-  const [clothDetails, setClothDetails] = useState<ClothDetails | null>(null);
+const SearchCloth: React.FC = () => {
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    name: "",
+    category: "",
+    id: "",
+    color: "",
+    size: "",
+  });
+  const [results, setResults] = useState<ClothItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
-  // Handle cloth ID input change
-  const handleClothIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setClothId(e.target.value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setSearchParams((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // Handle the search functionality
-  const handleSearch = async () => {
-    if (clothId) {
-      setLoading(true);
-      const details = await fetchClothDetails(clothId);
-      setClothDetails(details);
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const params = new URLSearchParams();
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (value) params.append(key, value);
+    });
+
+    try {
+      const response = await axios.get(`/api/admin/search-cloth?${params.toString()}`);
+      setResults(response.data);
+      console.log(response)
+    } catch (err: any) {
+      setError(
+        err.response?.data?.error || "An error occurred during the search"
+      );
+    } finally {
       setLoading(false);
-    } else {
-      alert("Please enter a Cloth ID to search.");
-    }
-  };
-
-  // Handle the update functionality
-  const handleUpdate = async () => {
-    if (clothDetails) {
-      await updateCloth(clothDetails);
-      toast.success("Cloth details updated successfully!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-    }
-  };
-
-  // Handle input change for cloth details (except clothId)
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (clothDetails) {
-      setClothDetails({
-        ...clothDetails,
-        [e.target.name]: e.target.value,
-      });
     }
   };
 
   return (
-    <div className="relative flex min-h-screen bg-transparent">
-      {/* Sidebar */}
-      <Sidebar/>
-
-      {/* Main Content */}
-      <main className="flex-1 p-6 mt-20">
-        <h1 className="text-2xl font-bold mb-6">Update Stock</h1>
-
-        {/* Input for Cloth ID */}
-        <div className="mb-6">
-          <label htmlFor="clothId" className="block font-semibold text-gray-700 mb-2">Enter Cloth ID</label>
-          <div className="flex">
-            <input
-              type="text"
-              id="clothId"
-              value={clothId}
-              onChange={handleClothIdChange}
-              className="w-full p-3 border rounded-lg shadow-sm"
-              placeholder="Enter Cloth ID to search"
-            />
-            <button
-              onClick={handleSearch}
-              className="ml-4 bg-blue-800 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-            >
-              Search
-            </button>
-          </div>
-        </div>
-
-        {/* Display cloth details for update */}
-        {loading && <p>Loading cloth details...</p>}
-
-        {clothDetails && !loading && (
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4">Edit Cloth Details</h2>
-
-            {/* Cloth Type */}
-            <div className="mb-4">
-              <label htmlFor="clothType" className="block font-semibold text-gray-700 mb-2">Cloth Type</label>
+    <div className="relative flex">
+      <Admin_sidebar />
+      <div className="flex-1 mx-auto max-w-7xl px-4 py-8 bg-gray-100">
+        <h2 className="text-3xl font-semibold text-center text-gray-800 mb-8">
+          Search Clothing Items
+        </h2>
+        <form
+          onSubmit={handleSearch}
+          className="bg-white shadow-md rounded-lg p-6 space-y-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Name
+              </label>
               <input
                 type="text"
-                id="clothType"
-                name="clothType"
-                value={clothDetails.clothType}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
+                id="name"
+                name="name"
+                value={searchParams.name}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter clothing name"
               />
             </div>
-
-            {/* Size */}
-            <div className="mb-4">
-              <label htmlFor="size" className="block font-semibold text-gray-700 mb-2">Size</label>
+            <div>
+              <label
+                htmlFor="category"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Category
+              </label>
               <input
                 type="text"
-                id="size"
-                name="size"
-                value={clothDetails.size}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
+                id="category"
+                name="category"
+                value={searchParams.category}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter category"
               />
             </div>
-
-            {/* Color */}
-            <div className="mb-4">
-              <label htmlFor="color" className="block font-semibold text-gray-700 mb-2">Color</label>
+            <div>
+              <label
+                htmlFor="id"
+                className="block text-sm font-medium text-gray-700"
+              >
+                ID
+              </label>
+              <input
+                type="text"
+                id="id"
+                name="id"
+                value={searchParams.id}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter item ID"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="color"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Color
+              </label>
               <input
                 type="text"
                 id="color"
                 name="color"
-                value={clothDetails.color}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
+                value={searchParams.color}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter color"
               />
             </div>
-
-            {/* Stock */}
-            <div className="mb-4">
-              <label htmlFor="stock" className="block font-semibold text-gray-700 mb-2">Stock</label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                value={clothDetails.stock}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            {/* Price */}
-            <div className="mb-4">
-              <label htmlFor="price" className="block font-semibold text-gray-700 mb-2">Price</label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={clothDetails.price}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            {/* Update Button */}
-            <div className="mt-4">
-              <button
-                onClick={handleUpdate}
-                className="bg-blue-800 text-white p-3 rounded-lg hover:bg-blue-700 w-full"
+            <div>
+              <label
+                htmlFor="size"
+                className="block text-sm font-medium text-gray-700"
               >
-                Update Cloth
-              </button>
+                Size
+              </label>
+              <input
+                type="text"
+                id="size"
+                name="size"
+                value={searchParams.size}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter size"
+              />
             </div>
           </div>
-        )}
-      </main>
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-2 px-4 rounded-md text-white ${loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+                }`}
+            >
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
+        </form>
 
-      {/* Toast container */}
-      <ToastContainer />
+        {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
+
+        <div className="mt-8">
+          <h3 className="text-2xl font-semibold text-gray-800 mb-4">Results:</h3>
+          {results.length === 0 && !loading && (
+            <p className="text-center text-gray-600">No items found.</p>
+          )}
+          {results.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {results.map((item) => (
+                <Card key={item._id} item={item} />
+              ))}
+            </div>
+          )}
+        </div>
+
+
+      </div>
     </div>
   );
 };
 
-export default UpdateStock;
+export default SearchCloth;
