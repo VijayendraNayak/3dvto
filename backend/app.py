@@ -312,6 +312,7 @@ def addcloth():
             'price': float(data.get('price', 0)),
             'sizes_available': data.get('sizes_available', '').split(','),
             'color': data.get('color', ''),
+            'stock':data.get('stock',''),
             'thumbnail_path': file_url,  # Store the Firebase URL
             'created_at': datetime.now(timezone.utc),
             'is_active': True
