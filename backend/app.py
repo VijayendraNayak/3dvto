@@ -310,7 +310,7 @@ def addcloth():
             'name': data.get('name', ''),
             'category_id': data.get('category', ''),
             'price': float(data.get('price', 0)),
-            'sizes_available': data.get('sizes_available', '').split(','),
+            'sizes': data.get('sizes', ''),
             'color': data.get('color', ''),
             'stock':data.get('stock',''),
             'thumbnail_path': file_url,  # Store the Firebase URL
@@ -405,6 +405,39 @@ def update_cloth(cloth_id):
         )
 
     return jsonify({"message": "Clothing item updated successfully"}), 200
+
+@app.route('/admin/search-cloth', methods=['GET'])
+def search_cloth():
+    # Extract query parameters
+    name = request.args.get('name', '').strip()
+    category = request.args.get('category', '').strip()
+    cloth_id = request.args.get('id', '').strip()
+    color = request.args.get('color', '').strip()
+    size = request.args.get('size', '').strip()
+
+    # Build the search filter
+    search_filter = {}
+
+    if name:
+        # Use a case-insensitive regex for partial matching
+        search_filter['name'] = {'$regex': name, '$options': 'i'}
+    if category:
+        search_filter['category_id'] = {'$regex': category, '$options': 'i'}
+    if cloth_id:
+        search_filter['_id'] = ObjectId(cloth_id)  # Convert to ObjectId if searching by ID
+    if color:
+        search_filter['color'] = {'$regex': color, '$options': 'i'}
+    if size:
+        search_filter['sizes_available'] = {'$in': [size]}  # Check if size exists in the list
+
+    # Query the database
+    clothing_items = list(mongo.db.clothing_items.find(search_filter))
+
+    # Convert MongoDB ObjectId to string and prepare the response
+    for item in clothing_items:
+        item['_id'] = str(item['_id'])
+
+    return jsonify(clothing_items), 200
 
 
 

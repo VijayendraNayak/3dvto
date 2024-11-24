@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Toaster, toast } from 'sonner';
+import { Toaster, toast } from "sonner";
 import axios from "axios";
 import Sidebar from "@/components/Admin_sidebar";
 
@@ -8,14 +8,16 @@ const AddStock = () => {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
-    size: "",
+    sizes: "", // Changed to a plain string
     color: "",
     stock: "",
     price: "",
     image: null, // Changed to null for file
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -31,7 +33,7 @@ const AddStock = () => {
     const data = new FormData();
     data.append("name", formData.name);
     data.append("category", formData.category);
-    data.append("size", formData.size);
+    data.append("sizes",formData.sizes); // Convert sizes to array
     data.append("color", formData.color);
     data.append("stock", formData.stock);
     data.append("price", formData.price);
@@ -56,7 +58,7 @@ const AddStock = () => {
         setFormData({
           name: "",
           category: "",
-          size: "",
+          sizes: "",
           color: "",
           stock: "",
           price: "",
@@ -117,25 +119,19 @@ const AddStock = () => {
             </div>
 
             <div>
-              <label htmlFor="size" className="block font-semibold">
-                Size
+              <label htmlFor="sizes" className="block font-semibold">
+                Sizes
               </label>
-              <select
-                id="size"
-                name="size"
-                value={formData.size}
+              <input
+                type="text"
+                id="sizes"
+                name="sizes"
+                value={formData.sizes}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
+                placeholder="Enter Sizes (e.g., S, M, L, XL)"
                 required
-              >
-                <option value="" disabled>
-                  Select Size
-                </option>
-                <option value="S">Small</option>
-                <option value="M">Medium</option>
-                <option value="L">Large</option>
-                <option value="XL">Extra Large</option>
-              </select>
+              />
             </div>
 
             <div>
@@ -159,7 +155,7 @@ const AddStock = () => {
                 Stock
               </label>
               <input
-                type="number"
+                type="text"
                 id="stock"
                 name="stock"
                 value={formData.stock}
@@ -175,7 +171,7 @@ const AddStock = () => {
                 Price
               </label>
               <input
-                type="number"
+                type="text"
                 id="price"
                 name="price"
                 value={formData.price}
@@ -212,7 +208,7 @@ const AddStock = () => {
         </form>
 
         {/* Toast Container for Notifications */}
-        <Toaster />
+        <Toaster richColors />
       </main>
     </div>
   );
