@@ -4,6 +4,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 from flask_cors import CORS
 from dotenv import load_dotenv
+<<<<<<< HEAD
+from werkzeug.utils import secure_filename
+import firebase_admin
+from firebase_admin import credentials, storage
+=======
+>>>>>>> origin/main
 from functools import wraps
 import jwt
 import time
@@ -23,7 +29,17 @@ UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
-NGROK_URL = os.getenv("NGROK_URL")
+ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
+
+
+cred = credentials.Certificate("./serviceAccountKey.json")
+firebase_admin.initialize_app(cred, {
+    "storageBucket": "ecommerce-1094e.appspot.com"
+})
+
+# Get a reference to the Firebase Storage bucket
+bucket = storage.bucket()
+
 
 # Configuration
 app.config["MONGO_URI"] = mongo_url
@@ -153,43 +169,6 @@ def login():
 
     return response, 200
 
-
-# Admin: Add clothing
-@app.route('/admin/clothing', methods=['POST'])
-@token_required
-@admin_required
-def add_clothing(current_user):
-    data = request.get_json()
-    clothing_item = {
-        'name': data['name'],
-        'category_id': data['category'],
-        'price': float(data['price']),
-        'sizes_available': data.get('sizes_available', []),
-        'color': data.get('color', ''),
-        'model_file_path': data.get('model_file_path', ''),
-        'thumbnail_path': data.get('thumbnail_path', ''),
-        'created_by': current_user['_id'],
-        'created_at': datetime.now(timezone.utc),
-        'is_active': True
-    }
-
-    result = mongo.db.clothing_items.insert_one(clothing_item)
-    log_admin_action(current_user['_id'], 'CREATE', 'clothing_items', result.inserted_id, data)
-
-    return jsonify({'message': 'Clothing item added successfully', 'id': str(result.inserted_id)}), 201
-
-# Helper function for logging admin actions
-def log_admin_action(admin_id, action_type, collection_name, record_id, changes):
-    log = {
-        'admin_id': admin_id,
-        'action_type': action_type,
-        'collection_name': collection_name,
-        'record_id': str(record_id),
-        'changes': changes,
-        'action_timestamp': datetime.now(timezone.utc).isoformat()
-    }
-    mongo.db.admin_audit_logs.insert_one(log)
-    
 # Function to create a 3D model task
 def create_3d_model(image_url):
     url = "https://api.meshy.ai/v1/image-to-3d"
@@ -257,34 +236,185 @@ def api_check_task_status(task_id):
 
 # File upload endpoint
 # File upload endpoint
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+# Check if file extension is allowed
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Route to upload an image
+@app.route("/upload", methods=["POST"])
+def upload_image():
+    if "file" not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
     
-    file = request.files['file']
-    if file.filename == '':
+    file = request.files["file"]
+    
+    if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
     
-    if file:
-        # Save the original file
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(file_path)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        local_path = os.path.join("/tmp", filename)  # Save temporarily before uploading to Firebase
+        file.save(local_path)
         
-        # Remove the background from the image
-        no_bg_path = remove_background(file_path)
-        if not no_bg_path:
-            return jsonify({"error": "Failed to remove background"}), 500
+        # Upload to Firebase Storage
+        blob = bucket.blob(f"images/{filename}")
+        blob.upload_from_filename(local_path)
+        blob.make_public()  # Make the file publicly accessible
         
-        # Generate a public download link using ngrok
-        public_url = f"{NGROK_URL}/uploads/{os.path.basename(no_bg_path)}"
-        return jsonify({"message": "File uploaded successfully!", "download_url": public_url})
+        # Get the public URL
+        file_url = blob.public_url
+        
+        # Save the image metadata to MongoDB
+        image_data = {
+            "filename": filename,
+            "url": file_url
+        }
+        mongo.db.images.insert_one(image_data)
+        
+        # Clean up temporary file
+        os.remove(local_path)
+        
+        return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
+    
+    return jsonify({"error": "Invalid file type"}), 400
+
+@app.route('/admin/add-cloth', methods=['POST'])
+def addcloth():
+    if 'image' not in request.files:
+        return jsonify({"error": 'No image file provided'}), 400
+
+    file = request.files['image']
+
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if file and allowed_file(file.filename):
+        # Secure and save the file temporarily
+        filename = secure_filename(file.filename)
+        local_path = os.path.join("/tmp", filename)
+        file.save(local_path)
+
+        # Upload to Firebase Storage
+        blob = bucket.blob(f"clothing_images/{filename}")
+        blob.upload_from_filename(local_path)
+        blob.make_public()  # Make the file publicly accessible
+
+        # Get the public URL for the uploaded image
+        file_url = blob.public_url
+
+        # Remove the temporary file
+        os.remove(local_path)
+
+        # Process other form data
+        data = request.form
+        clothing_item = {
+            'name': data.get('name', ''),
+            'category_id': data.get('category', ''),
+            'price': float(data.get('price', 0)),
+            'sizes_available': data.get('sizes_available', '').split(','),
+            'color': data.get('color', ''),
+            'thumbnail_path': file_url,  # Store the Firebase URL
+            'created_at': datetime.now(timezone.utc),
+            'is_active': True
+        }
+
+        # Insert the clothing item into the database
+        result = mongo.db.clothing_items.insert_one(clothing_item)
+
+        return jsonify({
+            'message': 'Clothing item added successfully',
+            'id': str(result.inserted_id),
+            'thumbnail_url': file_url
+        }), 201
+    else:
+        return jsonify({"error": "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed."}), 400
+    
+@app.route('/admin/delete-cloth/<cloth_id>', methods=['DELETE'])
+def delete_cloth(cloth_id):
+    clothing_item = mongo.db.clothing_items.find_one({"_id": ObjectId(cloth_id)})
+    
+    if not clothing_item:
+        return jsonify({"error": "Clothing item not found"}), 404
+
+    # Delete the image from Firebase Storage
+    thumbnail_path = clothing_item.get('thumbnail_path')
+    if thumbnail_path:
+        # Extract the file name from the URL
+        filename = thumbnail_path.split('/')[-1]
+        blob = bucket.blob(f"clothing_images/{filename}")
+        blob.delete()
+
+    # Delete the item from MongoDB
+    mongo.db.clothing_items.delete_one({"_id": ObjectId(cloth_id)})
+
+    return jsonify({"message": "Clothing item deleted successfully"}), 200
+
+@app.route('/admin/update-cloth/<cloth_id>', methods=['PATCH'])
+def update_cloth(cloth_id):
+    clothing_item = mongo.db.clothing_items.find_one({"_id": ObjectId(cloth_id)})
+    
+    if not clothing_item:
+        return jsonify({"error": "Clothing item not found"}), 404
+
+    data = request.form
+
+    # Check if a new image is provided
+    if 'image' in request.files:
+        file = request.files['image']
+        if file and allowed_file(file.filename):
+            # Secure and save the new file temporarily
+            filename = secure_filename(file.filename)
+            local_path = os.path.join("/tmp", filename)
+            file.save(local_path)
+
+            # Upload the new image to Firebase Storage
+            blob = bucket.blob(f"clothing_images/{filename}")
+            blob.upload_from_filename(local_path)
+            blob.make_public()
+
+            # Get the public URL of the new image
+            file_url = blob.public_url
+
+            # Remove the temporary file
+            os.remove(local_path)
+
+            # Update only the image path in MongoDB
+            mongo.db.clothing_items.update_one(
+                {"_id": ObjectId(cloth_id)},
+                {"$set": {"thumbnail_path": file_url}}
+            )
+
+    # Update only provided fields
+    updated_fields = {}
+    if 'name' in data:
+        updated_fields['name'] = data['name']
+    if 'category' in data:
+        updated_fields['category_id'] = data['category']
+    if 'price' in data:
+        updated_fields['price'] = float(data['price'])
+    if 'sizes_available' in data:
+        updated_fields['sizes_available'] = data['sizes_available'].split(',')
+    if 'color' in data:
+        updated_fields['color'] = data['color']
+
+    if updated_fields:
+        updated_fields['updated_at'] = datetime.now(timezone.utc)
+        mongo.db.clothing_items.update_one(
+            {"_id": ObjectId(cloth_id)},
+            {"$set": updated_fields}
+        )
+
+    return jsonify({"message": "Clothing item updated successfully"}), 200
+
+
+
 
 # Serve uploaded files
 @app.route('/uploads/<filename>')
 def serve_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
 
 # Error handlers
 @app.errorhandler(404)
