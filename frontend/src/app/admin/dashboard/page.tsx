@@ -22,7 +22,7 @@ const page = () => {
   useEffect(()=>{
     const fetchData=async()=>{
       try{
-        const response=await axios.get("/api/admin/getall")
+        const response=await axios.get("/api/getall")
         setFormdata(response.data)
       }catch(err){
         console.log(err)
