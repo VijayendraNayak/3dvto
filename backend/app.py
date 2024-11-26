@@ -439,10 +439,18 @@ def search_cloth():
 
     return jsonify(clothing_items), 200
 
-# @app.route('/admin/getall',methods=['GET'])
-# def getall():
-    
 
+@app.route('/admin/getall', methods=['GET'])
+def getall():
+    # Query all documents from the `clothing_items` collection
+    clothing_items = list(mongo.db.clothing_items.find())
+
+    # Convert MongoDB ObjectId to string for JSON serialization
+    for item in clothing_items:
+        item['_id'] = str(item['_id'])
+
+    # Return the clothing items as a JSON response
+    return jsonify(clothing_items), 200
 
 
 # Serve uploaded files
