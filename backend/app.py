@@ -440,7 +440,7 @@ def search_cloth():
     return jsonify(clothing_items), 200
 
 
-@app.route('/admin/getall', methods=['GET'])
+@app.route('/getall', methods=['GET'])
 def getall():
     # Query all documents from the `clothing_items` collection
     clothing_items = list(mongo.db.clothing_items.find())
@@ -452,6 +452,55 @@ def getall():
     # Return the clothing items as a JSON response
     return jsonify(clothing_items), 200
 
+@app.route("/order/add",methods=['POST'])
+def order():
+    data=request.get_json()
+    order={
+        'user_id':data['user_id'],
+        'username':data['username'],
+        'email':data['email'],
+        'address':data['address'],
+        'phone':data['phone'],
+        'cloth_id':data['cloth_id'],
+        'clothname':data['clothname'],
+        'created_at': datetime.now(timezone.utc)
+    }
+    mongo.db.order.insert_one(order)
+    return jsonify({'message':'Order placed successfully'}), 201
+
+@app.route("/order/delete/<order_id>",methods=['DELETE'])
+def deleteorder(order_id):
+    order= mongo.db.order.find_one({"_id":ObjectId(order_id)})
+    if not order:
+        return jsonify({'message':'Order does not exist'}),400
+    mongo.db.order.delete_one({'_id':ObjectId(order_id)})
+    return jsonify({'message':"Order deleted successfully"}), 200
+
+@app.route('/cart/add',methods=['POST'])
+def addcart():
+    data=request.get_json()
+    if 'cloth' not in data:
+        return jsonify({'message':"Cloth not found"}), 400
+    cloth=data['cloth']
+    user_id=data['user_id']
+    
+    cartitem={
+        'user_id':user_id,
+        'cloth':cloth,
+        'quantity':data.get('quantity',1),
+        'created_at':datetime.now(timezone.utc)
+    }
+    mongo.db.cart.insert_one(cartitem)
+    return jsonify({'message':'Item added to the cart successfully'}),201
+
+@app.route('/cart/delete/<cart_id>',methods=['DELETE'])
+def deletecart(cart_id):
+    cartitem=mongo.db.cart.find_one({"_id":ObjectId(cart_id)})
+    if not cartitem:
+        return jsonify({'message':"item not found in the cart"}),400
+    mongo.db.cart.delete_one({"_id":ObjectId(cart_id)})
+    return jsonify({'message':"Item in the cart delted successfully"}),200
+        
 
 # Serve uploaded files
 @app.route('/uploads/<filename>')
