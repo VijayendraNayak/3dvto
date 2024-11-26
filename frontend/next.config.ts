@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Configure allowed image domains
+  images: {
+    domains: ['example.com'], // Replace 'example.com' with your API's domain
+  },
+  
+  // Rewrite API requests to the backend
   async rewrites() {
     return [
       {
