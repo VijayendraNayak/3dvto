@@ -13,7 +13,7 @@ type Props = {};
 
 const Navbar = (props: Props) => {
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-    const user = useSelector((state: RootState) => state.auth.user)||null;
+    const user = useSelector((state: RootState) => state.auth.user) || null;
     const [isClient, setIsClient] = useState(false);
     const router = useRouter();
 
@@ -30,7 +30,7 @@ const Navbar = (props: Props) => {
         <div className="fixed top-0 left-0 z-50 w-full py-2 bg-gradient-to-r from-purple-200 to-purple-300 border-b-4 border-purple-800 flex justify-around items-center shadow-xl">
             <div className="flex items-center gap-4">
                 <Link
-                    href={(isAuthenticated && user.role==="user")?"/":"/admin/dashboard"}
+                    href={(isAuthenticated && user.role === "user") ? "/" : "/admin/dashboard"}
                     className="flex cursor-pointer items-center gap-4 px-4 bg-white shadow-lg hover:shadow-xl opacity-90 rounded-xl p-2"
                 >
                     <Image src="/logo1.png" alt="logo" width={48} height={48} />
@@ -55,11 +55,14 @@ const Navbar = (props: Props) => {
                         <CgProfile className="text-3xl font-semibold" />
                         <span className="text-xl">{user?.name}</span>
                     </div>
-                    <div
-                        onClick={() => { router.push('/profile') }}
-                    >
-                        <FaCartShopping className="text-3xl font-semibold" />
-                    </div>
+                    {
+                        user.role === "user" && <div
+                            onClick={() => { router.push('/profile') }}
+                        >
+                            <FaCartShopping className="text-3xl font-semibold" />
+                        </div>
+                    }
+
                 </div>
             )}
         </div>
