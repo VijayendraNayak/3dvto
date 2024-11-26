@@ -308,7 +308,7 @@ def addcloth():
         data = request.form
         clothing_item = {
             'name': data.get('name', ''),
-            'category_id': data.get('category', ''),
+            'category': data.get('category', ''),
             'price': float(data.get('price', 0)),
             'sizes': data.get('sizes', ''),
             'color': data.get('color', ''),
@@ -389,11 +389,11 @@ def update_cloth(cloth_id):
     if 'name' in data:
         updated_fields['name'] = data['name']
     if 'category' in data:
-        updated_fields['category_id'] = data['category']
+        updated_fields['category'] = data['category']
     if 'price' in data:
         updated_fields['price'] = float(data['price'])
     if 'sizes_available' in data:
-        updated_fields['sizes_available'] = data['sizes_available'].split(',')
+        updated_fields['sizes_available'] = data['sizes_available']
     if 'color' in data:
         updated_fields['color'] = data['color']
 
@@ -422,13 +422,13 @@ def search_cloth():
         # Use a case-insensitive regex for partial matching
         search_filter['name'] = {'$regex': name, '$options': 'i'}
     if category:
-        search_filter['category_id'] = {'$regex': category, '$options': 'i'}
+        search_filter['category'] = {'$regex': category, '$options': 'i'}
     if cloth_id:
         search_filter['_id'] = ObjectId(cloth_id)  # Convert to ObjectId if searching by ID
     if color:
         search_filter['color'] = {'$regex': color, '$options': 'i'}
     if size:
-        search_filter['sizes_available'] = {'$in': [size]}  # Check if size exists in the list
+        search_filter['sizes_available'] = {'$in':size}  # Check if size exists in the list
 
     # Query the database
     clothing_items = list(mongo.db.clothing_items.find(search_filter))
