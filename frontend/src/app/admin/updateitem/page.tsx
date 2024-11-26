@@ -1,5 +1,5 @@
-"use client";
-import React, { useState } from "react";
+"use client"
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Admin_sidebar from "../../../components/Admin_sidebar";
 import Card from "@/components/Card";
@@ -24,16 +24,25 @@ interface ClothItem {
 }
 
 const SearchCloth: React.FC = () => {
-  const [searchParams, setSearchParams] = useState<SearchParams>({
-    name: "",
-    category: "",
-    id: "",
-    color: "",
-    size: "",
+  const [searchParams, setSearchParams] = useState<SearchParams>(() => {
+    // Load from localStorage on initial render
+    const savedParams = localStorage.getItem("searchParams");
+    return savedParams ? JSON.parse(savedParams) : {
+      name: "",
+      category: "",
+      id: "",
+      color: "",
+      size: "",
+    };
   });
   const [results, setResults] = useState<ClothItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+
+  // Save to localStorage whenever searchParams changes
+  useEffect(() => {
+    localStorage.setItem("searchParams", JSON.stringify(searchParams));
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,7 +65,6 @@ const SearchCloth: React.FC = () => {
     try {
       const response = await axios.get(`/api/admin/search-cloth?${params.toString()}`);
       setResults(response.data);
-      console.log(response)
     } catch (err: any) {
       setError(
         err.response?.data?.error || "An error occurred during the search"
@@ -168,10 +176,11 @@ const SearchCloth: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2 px-4 rounded-md text-white ${loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-                }`}
+              className={`w-full py-2 px-4 rounded-md text-white ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+              }`}
             >
               {loading ? "Searching..." : "Search"}
             </button>
@@ -181,20 +190,20 @@ const SearchCloth: React.FC = () => {
         {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
 
         <div className="mt-8">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-4">Results:</h3>
+          <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+            Results:
+          </h3>
           {results.length === 0 && !loading && (
             <p className="text-center text-gray-600">No items found.</p>
           )}
           {results.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex flex-row gap-6">
               {results.map((item) => (
                 <Card key={item._id} item={item} />
               ))}
             </div>
           )}
         </div>
-
-
       </div>
     </div>
   );
