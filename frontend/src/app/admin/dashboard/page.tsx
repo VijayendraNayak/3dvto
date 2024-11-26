@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import Link from "next/link";
 import Sidebar from "@/components/Admin_sidebar";
 const page = () => {
   return (
@@ -18,38 +17,17 @@ const page = () => {
             <p className="text-2xl font-bold text-blue-600">1500</p>
           </div>
           <div className="bg-white shadow-md rounded-md p-4 text-center">
-            <h2 className="text-lg font-semibold">Number of Shirts</h2>
+            <h2 className="text-lg font-semibold">Total Orders</h2>
             <p className="text-2xl font-bold text-blue-600">500</p>
           </div>
           <div className="bg-white shadow-md rounded-md p-4 text-center">
-            <h2 className="text-lg font-semibold">Sold</h2>
+            <h2 className="text-lg font-semibold">Total sales</h2>
             <p className="text-2xl font-bold text-blue-600">300</p>
           </div>
         </div>
 
-        {/* Optional Table or Additional Features */}
-        <div className="mt-8 bg-white shadow-md rounded-md p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Stock Updates</h2>
-          <table className="w-full text-left">
-            <thead>
-              <tr>
-                <th className="border-b py-2">Cloth ID</th>
-                <th className="border-b py-2">Cloth Type</th>
-                <th className="border-b py-2">Size</th>
-                <th className="border-b py-2">Stock</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="py-2">001</td>
-                <td className="py-2">Shirt</td>
-                <td className="py-2">M</td>
-                <td className="py-2">50</td>
-              </tr>
-              {/* Add more rows as needed */}
-            </tbody>
-          </table>
-        </div>
+        f
+        
       </main>
     </div>
   );
