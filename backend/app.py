@@ -439,6 +439,9 @@ def search_cloth():
 
     return jsonify(clothing_items), 200
 
+# @app.route('/admin/getall',methods=['GET'])
+# def getall():
+    
 
 
 
