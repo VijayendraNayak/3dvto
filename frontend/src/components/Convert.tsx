@@ -14,18 +14,6 @@ const Convert: React.FC = () => {
     const [result, setResult] = useState<any>(null);
     const [showModelPopup, setShowModelPopup] = useState<boolean>(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0] || null;
-        setFile(selectedFile);
-
-        if (selectedFile) {
-            const preview = URL.createObjectURL(selectedFile);
-            setPreviewUrl(preview);
-            setError(null);
-        }
-    };
 
     const handleImageUpload = async () => {
         if (!file) {
@@ -113,79 +101,10 @@ const Convert: React.FC = () => {
 
     return (
         <>
-            <section className="relative min-h-screen bg-gray-400 bg-opacity-30 flex items-center justify-center mt-20 px-4">
-                <div className="relative max-w-4xl mx-auto px-4 py-16 sm:px-8 md:px-12 lg:py-20">
-                    <h2 className="text-2xl md:text-4xl font-bold text-center mb-8">
-                        Upload Image
-                    </h2>
-                    <div className="relative bg-white border-2  text-center border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center">
-                        
-                        <div className="text-center">
-                            <img
-                                src="/upload.png"
-                                alt="Upload Icon"
-                                className="mb-4 w-12 md:w-16 h-12 md:h-16 mx-auto"
-                            />
-                            <p className="text-sm md:text-base text-gray-500 mb-4">
-                                Drag an image here or click to upload
-                            </p>
-                            <label
-                                htmlFor="image-upload"
-                                className="cursor-pointer px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                            >
-                                Choose Image
-                            </label>
-                            <input
-                                id="image-upload"
-                                type="file"
-                                accept="image/*"
-                                ref={fileInputRef}
-                                className="hidden"
-                                onChange={handleImageSelection}
-                            />
-                        </div>
-
-                        {error && (
-                            <p className="text-red-500 mt-4 text-sm">
-                                {error}
-                            </p>
-                        )}
-
-                        {previewUrl && (
-                            <div className="mt-6 w-full flex justify-center">
-                                <img
-                                    src={previewUrl}
-                                    className="w-auto max-h-64 object-contain rounded-md border border-gray-300"
-                                    alt="Selected Preview"
-                                />
-                            </div>
-                        )}
-
-                        {previewUrl && (
-                            <button
-                                onClick={handleImageUpload}
-                                disabled={isConverting}
-                                className="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
-                            >
-                                {isConverting ? "Converting..." : "Convert to 3D"}
-                            </button>
-                        )}
-
-                        {modelUrl && (
-                            <div className="mt-4">
-                                <a
-                                    href={modelUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    View 3D Model
-                                </a>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </section>
+            <div className="bg-gradient-to-r from-blue-300 to-blue-500 hover:from-blue-400 hover:to-blue-600 px-4 py-3 font-semibold text-white rounded-lg cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200"
+            onClick={handleImageUpload}>
+                Convert to 3D
+            </div>
             {modelUrl && showModelPopup && (
                 <ModelPopup
                     modelUrl={modelUrl}
