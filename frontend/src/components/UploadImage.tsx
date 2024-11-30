@@ -15,6 +15,7 @@ const UploadImage: React.FC = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [uploaded, setUploaded] = useState<boolean | null>(false)
+    const [loading, setLoading] = useState<boolean | null>(false)
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const router = useRouter();
@@ -52,6 +53,7 @@ const UploadImage: React.FC = () => {
 
         try {
             setError(null);
+            setLoading(true);
             const uploadResponse = await axios.post("/api/upload", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -73,6 +75,7 @@ const UploadImage: React.FC = () => {
                     duration: 2000,
                 });
             }
+            setLoading(false);
         } catch (err) {
             console.error(err);
             setError("An error occurred during the upload.");
@@ -80,6 +83,7 @@ const UploadImage: React.FC = () => {
                 position: "top-right",
                 duration: 2000,
             });
+            setLoading(false);
         }
     };
 
@@ -92,7 +96,6 @@ const UploadImage: React.FC = () => {
                             Upload Image
                         </h2>
                         <div className="relative bg-white border-2  text-center border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center">
-
                             <div className="text-center">
                                 <img
                                     src="/upload.png"
@@ -117,13 +120,11 @@ const UploadImage: React.FC = () => {
                                     onChange={handleImageSelection}
                                 />
                             </div>
-
                             {error && (
                                 <p className="text-red-500 mt-4 text-sm">
                                     {error}
                                 </p>
                             )}
-
                             {previewUrl && (
                                 <div className="mt-6 w-full flex justify-center">
                                     <img
@@ -139,7 +140,9 @@ const UploadImage: React.FC = () => {
                                         onClick={handleImageUpload}
                                         className="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
                                     >
-                                        Upload Image
+                                        {
+                                            loading ? "uploading..." : "Upload Image"
+                                        }
                                     </button>
                                 )
                             }
@@ -154,7 +157,7 @@ const UploadImage: React.FC = () => {
             </div>
             <div className="flex flex-col bg-gray-400 bg-opacity-30 min-h-screen">
                 <div className="flex justify-center">
-                    <button className="bg-green-500 hover:bg-gradient-to-r hover:from-green-300 hover:to-green-500 px-6 py-3 font-semibold text-white rounded-lg cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200">
+                    <button className="bg-gradient-to-r from-green-400 to-green-500 hover:bg-gradient-to-r hover:from-green-400 hover:to-green-500 px-12 py-4 font-semibold text-white text-xl rounded-full cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200">
                         Proceed
                     </button>
                 </div>
