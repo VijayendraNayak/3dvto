@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import credentials, storage
+from urllib.parse import quote
+from time import sleep
 from functools import wraps
 import jwt
 import time
@@ -25,6 +27,8 @@ CORS(app, resources={r"/*": {"origins": frontend_url}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+CARTOON_API_KEY = "cb78efce4bmsh10346ff41553f7ap13997cjsn16eb70f20bd0"
+CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
 
@@ -500,7 +504,100 @@ def deletecart(cart_id):
         return jsonify({'message':"item not found in the cart"}),400
     mongo.db.cart.delete_one({"_id":ObjectId(cart_id)})
     return jsonify({'message':"Item in the cart delted successfully"}),200
-        
+
+
+@app.route('/cartoonize', methods=['POST'])
+def cartoonize_image():
+    """
+    Accepts an image file and an index from the request to start the cartoonization process.
+    Returns only the task ID.
+    """
+    # Check if an image file was uploaded
+    if 'image' not in request.files:
+        return jsonify({"status": "error", "message": "Image file is required"}), 400
+
+    image = request.files['image']
+    if not image:
+        return jsonify({"status": "error", "message": "Image file is required"}), 400
+
+    # Check if 'index' is present in the form data
+    index = request.form.get('index')
+    if index is None:
+        return jsonify({"status": "error", "message": "Index is required"}), 400
+
+    # Convert the image to a format suitable for sending
+    files = {
+        'image': (image.filename, image.read(), image.content_type)
+    }
+    data = {
+        'index': index
+    }
+
+    # API request headers
+    headers = {
+        "x-rapidapi-key": CARTOON_API_KEY,
+        "x-rapidapi-host": CARTOON_API_HOST
+    }
+
+    url = "https://ai-cartoon-generator.p.rapidapi.com/image/effects/generate_cartoonized_image"
+
+    try:
+        response = requests.post(url, headers=headers, files=files, data=data)
+        response.raise_for_status()
+
+        # Print and check the response JSON
+        print(f"Response JSON: {response.json()}")
+
+        job_id = response.json().get("task_id")
+        if not job_id:
+            return jsonify({"status": "error", "message": "Failed to start cartoonization job"}), 500
+
+        return jsonify({"status": "success", "task_id": job_id}), 200
+
+    except requests.exceptions.RequestException as e:
+        print(f"Exception: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/get_result', methods=['GET'])
+def get_cartoonized_image():
+    task_id = request.args.get('task_id')
+    if not task_id:
+        return jsonify({"status": "error", "message": "task_id is required"}), 400
+
+    print(f"Task ID received: {task_id}")
+
+    url = "https://ai-cartoon-generator.p.rapidapi.com/api/rapidapi/query-async-task-result"
+    headers = {
+        "x-rapidapi-key": CARTOON_API_KEY,
+        "x-rapidapi-host": CARTOON_API_HOST
+    }
+    params = {"task_id": task_id}
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        print(f"Request URL: {response.url}")
+        print(f"Response Status Code: {response.status_code}")
+        print(f"Response Content: {response.text}")
+        response.raise_for_status()
+
+        # Log the response for debugging
+        print(f"API Response: {response.json()}")
+
+        job_data = response.json().get('data', {})
+        status = job_data.get('status')
+
+        if status == "COMPLETED":
+            image_url = job_data.get('output', {}).get('url')
+            return jsonify({"status": "success", "image_url": image_url}), 200
+        elif status == "FAILED":
+            return jsonify({"status": "error", "message": "Cartoonization failed"}), 500
+
+        return jsonify({"status": "error", "message": f"Unexpected status: {status}"}), 500
+
+    except requests.exceptions.RequestException as e:
+        print(f"Exception Occurred: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Serve uploaded files
 @app.route('/uploads/<filename>')
@@ -519,3 +616,4 @@ def internal_error(error):
 if __name__ == '__main__':
     print("🚀 Starting Flask server...")
     app.run(debug=True)
+
