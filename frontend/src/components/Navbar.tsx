@@ -57,7 +57,7 @@ const Navbar = (props: Props) => {
                     </div>
                     {
                         user.role === "user" && <div
-                            onClick={() => { router.push('/profile') }}
+                            onClick={() => { router.push('/cart') }}
                         >
                             <FaCartShopping className="text-3xl font-semibold" />
                         </div>
