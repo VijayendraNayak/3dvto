@@ -27,11 +27,10 @@ CORS(app, resources={r"/*": {"origins": frontend_url}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-CARTOON_API_KEY = "1fe287cec5mshfc8b764765d7f91p12169ejsna1960b2f8b12"
+CARTOON_API_KEY = os.getenv("CARTOON_API_KEY")
 CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
-
 
 cred = credentials.Certificate("./serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
@@ -435,6 +434,23 @@ def order():
     mongo.db.order.insert_one(order)
     return jsonify({'message':'Order placed successfully'}), 201
 
+@app.route("/order/getall/<user_id>", methods=["GET"])
+def getorder(user_id):
+    try:
+        orderitems = list(mongo.db.order.find({"user_id": user_id}))
+        
+        if not orderitems:
+            return jsonify({'message': "There are no items in the orders"}), 200
+        
+        for item in orderitems:
+            item['_id'] = str(item['_id'])
+            item['user_id'] = str(item['user_id'])
+        
+        return jsonify({"message": "Order items", "orderitems": orderitems}), 200
+    
+    except Exception as e:
+        return jsonify({'message': f"Error fetching order items: {str(e)}"}), 500
+
 @app.route("/order/delete/<order_id>",methods=['DELETE'])
 def deleteorder(order_id):
     order= mongo.db.order.find_one({"_id":ObjectId(order_id)})
@@ -442,6 +458,13 @@ def deleteorder(order_id):
         return jsonify({'message':'Order does not exist'}),400
     mongo.db.order.delete_one({'_id':ObjectId(order_id)})
     return jsonify({'message':"Order deleted successfully"}), 200
+
+@app.route('/admin/order/getall',methods=['GET'])
+def ordergetall():
+    orderitems=list(mongo.db.order.find())
+    for item in orderitems:
+        item['_id']=str(item['_id'])
+    return jsonify(orderitems),200
 
 @app.route('/cart/add',methods=['POST'])
 def addcart():
@@ -460,6 +483,23 @@ def addcart():
     mongo.db.cart.insert_one(cartitem)
     return jsonify({'message':'Item added to the cart successfully'}),201
 
+@app.route("/cart/getall/<user_id>", methods=["GET"])
+def getcart(user_id):
+    try:
+        cartitems = list(mongo.db.cart.find({"user_id": user_id}))
+        
+        if not cartitems:
+            return jsonify({'message': "There are no items in the cart"}), 200
+        
+        for item in cartitems:
+            item['_id'] = str(item['_id'])
+            item['user_id'] = str(item['user_id'])
+        
+        return jsonify({"message": "Cart items", "cartitems": cartitems}), 200
+    
+    except Exception as e:
+        return jsonify({'message': f"Error fetching cart items: {str(e)}"}), 500
+
 @app.route('/cart/delete/<cart_id>',methods=['DELETE'])
 def deletecart(cart_id):
     cartitem=mongo.db.cart.find_one({"_id":ObjectId(cart_id)})
@@ -467,6 +507,13 @@ def deletecart(cart_id):
         return jsonify({'message':"item not found in the cart"}),400
     mongo.db.cart.delete_one({"_id":ObjectId(cart_id)})
     return jsonify({'message':"Item in the cart delted successfully"}),200
+
+@app.route('/admin/cart/getall',methods=['GET'])
+def cartgetall():
+    cartitems=list(mongo.db.cart.find())
+    for item in cartitems:
+        item['_id']=str(item['_id'])
+    return jsonify(cartitems),200
 
 
 # Route to upload an image
