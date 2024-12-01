@@ -1,7 +1,8 @@
 import React from "react";
 import { RootState } from "../../store";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
 import { toast } from "sonner";
+import { selectCloth } from "../../store/slices/clothSlice";
 
 interface ClothItem {
   name: string;
@@ -16,6 +17,7 @@ interface ClothItem {
 
 const Homecard: React.FC<{ item: ClothItem }> = ({ item }) => {
   const isImageUploaded = useSelector((state: RootState) => state.image.isImageUploaded)
+  const dispatch=useDispatch()
   const handleTryclick = async () => {
     if (!isImageUploaded) {
       toast.error("First Upload the Image of the User", {
@@ -23,12 +25,11 @@ const Homecard: React.FC<{ item: ClothItem }> = ({ item }) => {
         duration: 2000,
       });
     } else {
+      dispatch(selectCloth({name:item.name,id:item._id,category:item.category,sizes:item.sizes,price:item.price,color:item.color,thumbnail_path:item.thumbnail_path}))
       window.scrollTo({
         top: window.scrollY + 180,
         behavior: "smooth", // Optional: Adds a smooth scrolling effect
       });
-
-      // code for 2d wrapping
     }
   };
 
