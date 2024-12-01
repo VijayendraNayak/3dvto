@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Admin_sidebar from "../../../components/Admin_sidebar";
 import Card from "@/components/Card";
+import Loader from "@/components/Loader";
 
 interface SearchParams {
   name?: string;
@@ -38,6 +39,7 @@ const SearchCloth: React.FC = () => {
   const [results, setResults] = useState<ClothItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+
 
   // Save to localStorage whenever searchParams changes
   useEffect(() => {
@@ -76,6 +78,7 @@ const SearchCloth: React.FC = () => {
 
   return (
     <div className="relative flex">
+      {loading&&<Loader/>}
       <Admin_sidebar />
       <div className="flex-1 mx-auto max-w-7xl px-4 py-8 bg-gray-100">
         <h2 className="text-3xl font-semibold text-center text-gray-800 mb-8">
@@ -176,11 +179,10 @@ const SearchCloth: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2 px-4 rounded-md text-white ${
-                loading
+              className={`w-full py-2 px-4 rounded-md text-white ${loading
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-indigo-600 hover:bg-indigo-700"
-              }`}
+                }`}
             >
               {loading ? "Searching..." : "Search"}
             </button>

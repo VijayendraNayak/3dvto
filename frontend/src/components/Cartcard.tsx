@@ -1,8 +1,9 @@
 "use client"
 import axios from 'axios';
-import React from 'react';
+import React, { useState } from 'react';
 import { toast, Toaster } from 'sonner';
 import Swal from 'sweetalert2';
+import Loader from './Loader';
 
 interface CartItem {
     _id: string;
@@ -18,7 +19,7 @@ export interface ClothDetails {
 
 
 const Cartcard: React.FC<{ item: CartItem }> = ({ item }) => {
-
+    const [loading, setLoading] = useState<boolean>(false);
     const handleDeleteClick = async (id: string) => {
         const result = await Swal.fire({
             title: "Are you sure?",
@@ -32,6 +33,7 @@ const Cartcard: React.FC<{ item: CartItem }> = ({ item }) => {
 
         if (result.isConfirmed) {
             try {
+                setLoading(true)
                 const response = await axios.delete(`/api/cart/delete/${id}`)
                 if (response.status === 200) {
                     console.log("Item from the cart deleted successfully")
@@ -49,6 +51,8 @@ const Cartcard: React.FC<{ item: CartItem }> = ({ item }) => {
                     position: "top-right",
                     duration: 2000
                 })
+            }finally{
+                setLoading(false)
             }
         }
     }
@@ -57,6 +61,7 @@ const Cartcard: React.FC<{ item: CartItem }> = ({ item }) => {
     {console.log(item.cloth.thumbnail_path)}
     return (
         <div className="bg-white w-72 shadow-md flex flex-col justify-center rounded-lg gap-4 p-4 mb-4">
+            {loading&&<Loader/>}
             <h4 className="text-xl font-semibold text-center">{item.cloth.name}</h4>
             <div>
                 <p>Category: ${item.cloth.category}</p>

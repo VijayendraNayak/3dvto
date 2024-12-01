@@ -2,6 +2,7 @@
 import React, { useState, useRef, ChangeEvent } from "react";
 import axios from "axios";
 import ModelPopup from './ModelPopup'; // Import the new ModelPopup component
+import Loader from "./Loader";
 
 const Convert: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -13,6 +14,7 @@ const Convert: React.FC = () => {
     const [status, setStatus] = useState("PENDING");
     const [result, setResult] = useState<any>(null);
     const [showModelPopup, setShowModelPopup] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
 
     const handleImageUpload = async () => {
@@ -27,6 +29,7 @@ const Convert: React.FC = () => {
         try {
             setIsConverting(true);
             setError(null);
+            setLoading(true)
 
             // Step 1: Upload the file
             const uploadResponse = await axios.post("/api/upload", formData, {
@@ -91,6 +94,7 @@ const Convert: React.FC = () => {
             setError("An error occurred during the upload.");
         } finally {
             setIsConverting(false);
+            setLoading(false)
         }
     };
 
@@ -101,8 +105,9 @@ const Convert: React.FC = () => {
 
     return (
         <>
+            {loading && <Loader />}
             <div className="bg-gradient-to-r from-blue-300 to-blue-500 hover:from-blue-400 hover:to-blue-600 px-4 py-3 font-semibold text-white rounded-lg cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200"
-            onClick={handleImageUpload}>
+                onClick={handleImageUpload}>
                 Convert to 3D
             </div>
             {modelUrl && showModelPopup && (

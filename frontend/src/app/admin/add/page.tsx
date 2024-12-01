@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Toaster, toast } from "sonner";
 import axios from "axios";
 import Sidebar from "@/components/Admin_sidebar";
+import Loader from "@/components/Loader";
 
 const AddStock = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const AddStock = () => {
     price: "",
     image: null, // Changed to null for file
   });
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -29,11 +31,11 @@ const AddStock = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true)
     const data = new FormData();
     data.append("name", formData.name);
     data.append("category", formData.category);
-    data.append("sizes",formData.sizes); // Convert sizes to array
+    data.append("sizes", formData.sizes); // Convert sizes to array
     data.append("color", formData.color);
     data.append("stock", formData.stock);
     data.append("price", formData.price);
@@ -70,6 +72,8 @@ const AddStock = () => {
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Error submitting form");
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -77,6 +81,7 @@ const AddStock = () => {
     <div className="relative flex min-h-screen bg-transparent">
       {/* Sidebar */}
       <Sidebar />
+      {loading&&<Loader/>}
 
       {/* Main Content */}
       <main className="flex-1 p-6 mt-20">

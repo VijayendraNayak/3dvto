@@ -50,7 +50,7 @@ const Navbar = (props: Props) => {
             ) : (
                 <div className="flex gap-16 items-center cursor-pointer">
                     <div
-                        className="flex gap-2"
+                        className="flex gap-2 hover:scale-105"
                         onClick={() => { router.push('/profile') }}
                     >
                         <CgProfile className="text-3xl font-semibold" />
@@ -62,11 +62,11 @@ const Navbar = (props: Props) => {
                                 <div
                                     onClick={() => { router.push('/cart') }}
                                 >
-                                    <FaCartShopping className="text-3xl font-semibold" />
+                                    <FaCartShopping className="text-3xl font-semibold hover:scale-105" />
                                 </div>
                                 <div
                                     onClick={() => { router.push('/order') }}>
-                                    <FaTruck className="text-3xl font-semibold" />
+                                    <FaTruck className="text-3xl font-semibold hover:scale-105" />
                                 </div>
                             </div>
 

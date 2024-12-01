@@ -1,4 +1,3 @@
-import React from "react";
 import { RootState } from "../../store";
 import { useSelector,useDispatch } from "react-redux";
 import { toast } from "sonner";
@@ -19,6 +18,7 @@ const Homecard: React.FC<{ item: ClothItem }> = ({ item }) => {
   const isImageUploaded = useSelector((state: RootState) => state.image.isImageUploaded)
   const dispatch=useDispatch()
   const handleTryclick = async () => {
+
     if (!isImageUploaded) {
       toast.error("First Upload the Image of the User", {
         position: "top-right",
@@ -34,7 +34,9 @@ const Homecard: React.FC<{ item: ClothItem }> = ({ item }) => {
   };
 
   return (
+
     <div className="border p-4 rounded-lg shadow-lg bg-white w-48 h-72 flex flex-col">
+      
       <div className="flex justify-center items-center h-36 bg-gray-100 rounded-md overflow-hidden">
         <img
           src={item.thumbnail_path}

@@ -2,7 +2,7 @@
 
 import UploadImage from "../components/UploadImage"
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const scrollToNextScreen = () => {

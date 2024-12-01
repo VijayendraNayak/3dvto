@@ -4,6 +4,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/";
+import Loader from '@/components/Loader';
 
 interface OrderItem {
     _id: string;
@@ -20,20 +21,25 @@ interface OrderItem {
 
 const page = () => {
     const [orderdata, setOrderdata] = useState<OrderItem[]>([])
+    const [loading, setLoading] = useState<boolean>(false);
     const user = useSelector((state: RootState) => state.auth.user) || null;
     useEffect(() => {
         const fetchorderData = async () => {
+            setLoading(true)
             try {
                 const response = await axios.get(`/api/order/getall/${user.id}`)
                 setOrderdata(response.data.orderitems)
             } catch (err) {
                 console.log(err)
+            }finally{
+                setLoading(false)
             }
         }
         fetchorderData()
     }, [])
     return (
         <div className='mt-24 relative mx-8'>
+            {loading&&<Loader/>}
             <div className='text-center mb-8 text-3xl font-semibold'>
                 Total Number of orders:{orderdata.length}
             </div>

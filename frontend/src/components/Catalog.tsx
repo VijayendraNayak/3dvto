@@ -2,6 +2,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import Homecard from "./Homecard";
+import Loader from "./Loader";
 
 interface ClothItem {
     name: string;
@@ -16,14 +17,18 @@ interface ClothItem {
 
 const Catalog:React.FC<{}> =({}) => {
     const [formData, setFormData] = useState<ClothItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setLoading(true)
                 const response = await axios.get("/api/getall");
                 setFormData(response.data);
             } catch (err) {
                 console.log(err);
+            }finally{
+                setLoading(false)
             }
         };
         fetchData();
@@ -31,6 +36,7 @@ const Catalog:React.FC<{}> =({}) => {
 
     return (
         <div className="max-h-screen flex flex-col gap-4">
+            {loading&&<Loader/>}
             <div className="text-4xl font-semibold text-center">
                 Select the cloth
             </div>

@@ -9,6 +9,7 @@ import { RootState } from "../../store";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { uploadImage } from "../../store/slices/imageSlice";
+import Loader from "./Loader";
 
 const UploadImage: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -21,6 +22,7 @@ const UploadImage: React.FC = () => {
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const router = useRouter();
     const dispatch = useDispatch();
+    
 
     const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0] || null;
@@ -44,22 +46,23 @@ const UploadImage: React.FC = () => {
             }, 2000);
             return;
         }
-    
+        
         // Validate file selection
         if (!file) {
             setError("Please select a file first.");
             return;
         }
-    
+        
         // Create form data for upload
         const formData = new FormData();
         formData.append("image", file);
         formData.append("index", String(index));
-    
+        
         try {
             // Reset previous errors and set loading state
             setError(null);
             setLoading(true);
+
     
             // Send request to start cartoonization
             const CartoonResponse = await axios.post("/api/cartoonize", formData, {
@@ -152,6 +155,7 @@ const UploadImage: React.FC = () => {
     
     return (
         <div className="flex flex-col bg-gray-400 bg-opacity-30 mt-20">
+            {loading&&<Loader/>}
             <div className="flex flex-row ">
                 <section className=" flex-1 relative min-h-screen bg-gray-400 bg-opacity-30 flex items-center justify-center  px-4">
                     <div className="relative max-w-4xl mx-auto px-4 py-16 sm:px-8 md:px-12 lg:py-20">
