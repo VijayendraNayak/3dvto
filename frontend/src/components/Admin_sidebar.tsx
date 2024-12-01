@@ -21,6 +21,9 @@ const page = () => {
               <Link href="/admin/updateitem" className="px-4 py-2 flex justify-center hover:bg-blue-700">
                 <div>Update & Delete Stock</div>
               </Link>
+              <Link href="/admin/order" className="px-4 py-2 flex justify-center hover:bg-blue-700">
+                <div>Orders</div>
+              </Link>
             </ul>
           </nav>
         </aside>
