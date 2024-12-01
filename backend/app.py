@@ -27,7 +27,7 @@ CORS(app, resources={r"/*": {"origins": frontend_url}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-CARTOON_API_KEY = "cb78efce4bmsh10346ff41553f7ap13997cjsn16eb70f20bd0"
+CARTOON_API_KEY = "1fe287cec5mshfc8b764765d7f91p12169ejsna1960b2f8b12"
 CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
@@ -243,43 +243,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Route to upload an image
-@app.route("/upload", methods=["POST"])
-def upload_image():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
-    
-    file = request.files["file"]
-    
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        local_path = os.path.join("/tmp", filename)  # Save temporarily before uploading to Firebase
-        file.save(local_path)
-        
-        # Upload to Firebase Storage
-        blob = bucket.blob(f"images/{filename}")
-        blob.upload_from_filename(local_path)
-        blob.make_public()  # Make the file publicly accessible
-        
-        # Get the public URL
-        file_url = blob.public_url
-        
-        # Save the image metadata to MongoDB
-        image_data = {
-            "filename": filename,
-            "url": file_url
-        }
-        mongo.db.images.insert_one(image_data)
-        
-        # Clean up temporary file
-        os.remove(local_path)
-        
-        return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
-    
-    return jsonify({"error": "Invalid file type"}), 400
 
 @app.route('/admin/add-cloth', methods=['POST'])
 def addcloth():
@@ -506,6 +469,44 @@ def deletecart(cart_id):
     return jsonify({'message':"Item in the cart delted successfully"}),200
 
 
+# Route to upload an image
+@app.route("/upload", methods=["POST"])
+def upload_image():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+    
+    file = request.files["file"]
+    
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        local_path = os.path.join("/tmp", filename)  # Save temporarily before uploading to Firebase
+        file.save(local_path)
+        
+        # Upload to Firebase Storage
+        blob = bucket.blob(f"images/{filename}")
+        blob.upload_from_filename(local_path)
+        blob.make_public()  # Make the file publicly accessible
+        
+        # Get the public URL
+        file_url = blob.public_url
+        
+        # Save the image metadata to MongoDB
+        image_data = {
+            "filename": filename,
+            "url": file_url
+        }
+        mongo.db.images.insert_one(image_data)
+        
+        # Clean up temporary file
+        os.remove(local_path)
+        
+        return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
+    
+    return jsonify({"error": "Invalid file type"}), 400
+
 @app.route('/cartoonize', methods=['POST'])
 def cartoonize_image():
     """
@@ -565,8 +566,6 @@ def get_cartoonized_image():
     if not task_id:
         return jsonify({"status": "error", "message": "task_id is required"}), 400
 
-    print(f"Task ID received: {task_id}")
-
     url = "https://ai-cartoon-generator.p.rapidapi.com/api/rapidapi/query-async-task-result"
     headers = {
         "x-rapidapi-key": CARTOON_API_KEY,
@@ -576,19 +575,14 @@ def get_cartoonized_image():
 
     try:
         response = requests.get(url, headers=headers, params=params)
-        print(f"Request URL: {response.url}")
-        print(f"Response Status Code: {response.status_code}")
-        print(f"Response Content: {response.text}")
         response.raise_for_status()
-
-        # Log the response for debugging
-        print(f"API Response: {response.json()}")
 
         job_data = response.json().get('data', {})
         status = job_data.get('status')
+        print(job_data)
 
-        if status == "COMPLETED":
-            image_url = job_data.get('output', {}).get('url')
+        if status == "PROCESS_SUCCESS":
+            image_url = job_data.get('result_url')
             return jsonify({"status": "success", "image_url": image_url}), 200
         elif status == "FAILED":
             return jsonify({"status": "error", "message": "Cartoonization failed"}), 500
