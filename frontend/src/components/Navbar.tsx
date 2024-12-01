@@ -8,6 +8,7 @@ import { RootState } from "../../store";
 import { CgProfile } from "react-icons/cg";
 import { FaCartShopping } from "react-icons/fa6";
 import { useRouter } from "next/navigation";
+import { FaTruck } from "react-icons/fa";
 
 type Props = {};
 
@@ -56,11 +57,20 @@ const Navbar = (props: Props) => {
                         <span className="text-xl">{user?.name}</span>
                     </div>
                     {
-                        user.role === "user" && <div
-                            onClick={() => { router.push('/cart') }}
-                        >
-                            <FaCartShopping className="text-3xl font-semibold" />
-                        </div>
+                        user.role === "user" && (
+                            <div className=" flex gap-16">
+                                <div
+                                    onClick={() => { router.push('/cart') }}
+                                >
+                                    <FaCartShopping className="text-3xl font-semibold" />
+                                </div>
+                                <div
+                                    onClick={() => { router.push('/order') }}>
+                                    <FaTruck className="text-3xl font-semibold" />
+                                </div>
+                            </div>
+
+                        )
                     }
 
                 </div>
