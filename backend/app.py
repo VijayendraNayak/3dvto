@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import credentials, storage
+from urllib.parse import quote
+from time import sleep
 from functools import wraps
 import jwt
 import time
@@ -25,9 +27,10 @@ CORS(app, resources={r"/*": {"origins": frontend_url}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+CARTOON_API_KEY = os.getenv("CARTOON_API_KEY")
+CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
-
 
 cred = credentials.Certificate("./serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
@@ -239,43 +242,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Route to upload an image
-@app.route("/upload", methods=["POST"])
-def upload_image():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
-    
-    file = request.files["file"]
-    
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        local_path = os.path.join("/tmp", filename)  # Save temporarily before uploading to Firebase
-        file.save(local_path)
-        
-        # Upload to Firebase Storage
-        blob = bucket.blob(f"images/{filename}")
-        blob.upload_from_filename(local_path)
-        blob.make_public()  # Make the file publicly accessible
-        
-        # Get the public URL
-        file_url = blob.public_url
-        
-        # Save the image metadata to MongoDB
-        image_data = {
-            "filename": filename,
-            "url": file_url
-        }
-        mongo.db.images.insert_one(image_data)
-        
-        # Clean up temporary file
-        os.remove(local_path)
-        
-        return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
-    
-    return jsonify({"error": "Invalid file type"}), 400
 
 @app.route('/admin/add-cloth', methods=['POST'])
 def addcloth():
@@ -468,6 +434,23 @@ def order():
     mongo.db.order.insert_one(order)
     return jsonify({'message':'Order placed successfully'}), 201
 
+@app.route("/order/getall/<user_id>", methods=["GET"])
+def getorder(user_id):
+    try:
+        orderitems = list(mongo.db.order.find({"user_id": user_id}))
+        
+        if not orderitems:
+            return jsonify({'message': "There are no items in the orders"}), 200
+        
+        for item in orderitems:
+            item['_id'] = str(item['_id'])
+            item['user_id'] = str(item['user_id'])
+        
+        return jsonify({"message": "Order items", "orderitems": orderitems}), 200
+    
+    except Exception as e:
+        return jsonify({'message': f"Error fetching order items: {str(e)}"}), 500
+
 @app.route("/order/delete/<order_id>",methods=['DELETE'])
 def deleteorder(order_id):
     order= mongo.db.order.find_one({"_id":ObjectId(order_id)})
@@ -475,6 +458,13 @@ def deleteorder(order_id):
         return jsonify({'message':'Order does not exist'}),400
     mongo.db.order.delete_one({'_id':ObjectId(order_id)})
     return jsonify({'message':"Order deleted successfully"}), 200
+
+@app.route('/admin/order/getall',methods=['GET'])
+def ordergetall():
+    orderitems=list(mongo.db.order.find())
+    for item in orderitems:
+        item['_id']=str(item['_id'])
+    return jsonify(orderitems),200
 
 @app.route('/cart/add',methods=['POST'])
 def addcart():
@@ -493,6 +483,23 @@ def addcart():
     mongo.db.cart.insert_one(cartitem)
     return jsonify({'message':'Item added to the cart successfully'}),201
 
+@app.route("/cart/getall/<user_id>", methods=["GET"])
+def getcart(user_id):
+    try:
+        cartitems = list(mongo.db.cart.find({"user_id": user_id}))
+        
+        if not cartitems:
+            return jsonify({'message': "There are no items in the cart"}), 200
+        
+        for item in cartitems:
+            item['_id'] = str(item['_id'])
+            item['user_id'] = str(item['user_id'])
+        
+        return jsonify({"message": "Cart items", "cartitems": cartitems}), 200
+    
+    except Exception as e:
+        return jsonify({'message': f"Error fetching cart items: {str(e)}"}), 500
+
 @app.route('/cart/delete/<cart_id>',methods=['DELETE'])
 def deletecart(cart_id):
     cartitem=mongo.db.cart.find_one({"_id":ObjectId(cart_id)})
@@ -500,7 +507,138 @@ def deletecart(cart_id):
         return jsonify({'message':"item not found in the cart"}),400
     mongo.db.cart.delete_one({"_id":ObjectId(cart_id)})
     return jsonify({'message':"Item in the cart delted successfully"}),200
+
+@app.route('/admin/cart/getall',methods=['GET'])
+def cartgetall():
+    cartitems=list(mongo.db.cart.find())
+    for item in cartitems:
+        item['_id']=str(item['_id'])
+    return jsonify(cartitems),200
+
+
+# Route to upload an image
+@app.route("/upload", methods=["POST"])
+def upload_image():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+    
+    file = request.files["file"]
+    
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        local_path = os.path.join("/tmp", filename)  # Save temporarily before uploading to Firebase
+        file.save(local_path)
         
+        # Upload to Firebase Storage
+        blob = bucket.blob(f"images/{filename}")
+        blob.upload_from_filename(local_path)
+        blob.make_public()  # Make the file publicly accessible
+        
+        # Get the public URL
+        file_url = blob.public_url
+        
+        # Save the image metadata to MongoDB
+        image_data = {
+            "filename": filename,
+            "url": file_url
+        }
+        mongo.db.images.insert_one(image_data)
+        
+        # Clean up temporary file
+        os.remove(local_path)
+        
+        return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
+    
+    return jsonify({"error": "Invalid file type"}), 400
+
+@app.route('/cartoonize', methods=['POST'])
+def cartoonize_image():
+    """
+    Accepts an image file and an index from the request to start the cartoonization process.
+    Returns only the task ID.
+    """
+    # Check if an image file was uploaded
+    if 'image' not in request.files:
+        return jsonify({"status": "error", "message": "Image file is required"}), 400
+
+    image = request.files['image']
+    if not image:
+        return jsonify({"status": "error", "message": "Image file is required"}), 400
+
+    # Check if 'index' is present in the form data
+    index = request.form.get('index')
+    if index is None:
+        return jsonify({"status": "error", "message": "Index is required"}), 400
+
+    # Convert the image to a format suitable for sending
+    files = {
+        'image': (image.filename, image.read(), image.content_type)
+    }
+    data = {
+        'index': index
+    }
+
+    # API request headers
+    headers = {
+        "x-rapidapi-key": CARTOON_API_KEY,
+        "x-rapidapi-host": CARTOON_API_HOST
+    }
+
+    url = "https://ai-cartoon-generator.p.rapidapi.com/image/effects/generate_cartoonized_image"
+
+    try:
+        response = requests.post(url, headers=headers, files=files, data=data)
+        response.raise_for_status()
+
+        # Print and check the response JSON
+        print(f"Response JSON: {response.json()}")
+
+        job_id = response.json().get("task_id")
+        if not job_id:
+            return jsonify({"status": "error", "message": "Failed to start cartoonization job"}), 500
+
+        return jsonify({"status": "success", "task_id": job_id}), 200
+
+    except requests.exceptions.RequestException as e:
+        print(f"Exception: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/get_result', methods=['GET'])
+def get_cartoonized_image():
+    task_id = request.args.get('task_id')
+    if not task_id:
+        return jsonify({"status": "error", "message": "task_id is required"}), 400
+
+    url = "https://ai-cartoon-generator.p.rapidapi.com/api/rapidapi/query-async-task-result"
+    headers = {
+        "x-rapidapi-key": CARTOON_API_KEY,
+        "x-rapidapi-host": CARTOON_API_HOST
+    }
+    params = {"task_id": task_id}
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+
+        job_data = response.json().get('data', {})
+        status = job_data.get('status')
+        print(job_data)
+
+        if status == "PROCESS_SUCCESS":
+            image_url = job_data.get('result_url')
+            return jsonify({"status": "success", "image_url": image_url}), 200
+        elif status == "FAILED":
+            return jsonify({"status": "error", "message": "Cartoonization failed"}), 500
+
+        return jsonify({"status": "error", "message": f"Unexpected status: {status}"}), 500
+
+    except requests.exceptions.RequestException as e:
+        print(f"Exception Occurred: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Serve uploaded files
 @app.route('/uploads/<filename>')
@@ -519,3 +657,4 @@ def internal_error(error):
 if __name__ == '__main__':
     print("🚀 Starting Flask server...")
     app.run(debug=True)
+

@@ -2,6 +2,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { toast, Toaster } from "sonner";
+import Loader from "./Loader";
 
 interface Clothitem {
     name: string; // Changed to lowercase string
@@ -16,8 +17,9 @@ interface Clothitem {
 
 const UpdatePop: React.FC<{ item: Clothitem, isvisible: boolean, onclose: () => void }> = ({ item, onclose, isvisible }) => {
     const [formData, setFormData] = useState<Clothitem>({ ...item });
-    console.log(formData)
+    const [loading, setLoading] = useState<boolean>(false);
     const onupdate = async (id: string) => {
+        setLoading(true)
         try {
             const response = await axios.patch(`/api/admin/update-cloth/${id}`, formData,{
 
@@ -46,6 +48,8 @@ const UpdatePop: React.FC<{ item: Clothitem, isvisible: boolean, onclose: () => 
                 position: "top-right",
                 duration: 2000
             });
+        }finally{
+            setLoading(false)
         }
     }
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +62,7 @@ const UpdatePop: React.FC<{ item: Clothitem, isvisible: boolean, onclose: () => 
     if (!isvisible) return null;
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+            {loading&&<Loader/>}
             <div className=" max-w-7xl mx-auto bg-white rounded-xl p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>

@@ -4,17 +4,18 @@ import "./login.css";
 import Link from "next/link";
 import axios from "axios";
 import { VscEye, VscEyeClosed } from "react-icons/vsc";
-import { Toaster, toast } from 'sonner';
+import { Toaster, toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { login } from "../../../store/slices/authSlice";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
+import Loader from "@/components/Loader";
 
-
-const page: React.FC = () => {
+const Page: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const [iseyevis, setIseyevis] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,9 +25,10 @@ const page: React.FC = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
   const handleEyeclick = () => {
     setIseyevis(!iseyevis);
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,20 +59,14 @@ const page: React.FC = () => {
     }
 
     try {
+      setLoading(true); // Start loader
       toast.loading("Logging in the user...");
       const response = await axios.post("/api/login", formData);
       const data = response.data.data;
 
       if (response.status === 200) {
-        // Set cookies
-        Cookies.set("loggedin", "true", {
-          expires: 7, // Cookie will expire in 7 days
-          path: "/", // Cookie accessible across the site
-        });
-        Cookies.set("role", data.role, {
-          expires: 7, // Cookie will expire in 7 days
-          path: "/", // Cookie accessible across the site
-        });
+        Cookies.set("loggedin", "true", { expires: 7, path: "/" });
+        Cookies.set("role", data.role, { expires: 7, path: "/" });
 
         toast.success("Login successful! Redirecting to the home page...", {
           position: "top-center",
@@ -82,14 +78,19 @@ const page: React.FC = () => {
           else router.push("/");
         }, 2000);
 
-        setFormData({
-          email: "",
-          password: "",
-        });
-        console.log(response)
+        setFormData({ email: "", password: "" });
 
         // Dispatch login state to Redux
-        dispatch(login({ email: data.email, id: data.id, role: data.role, name: data.name,phone:data.phone,address:data.address }));
+        dispatch(
+          login({
+            email: data.email,
+            id: data.id,
+            role: data.role,
+            name: data.name,
+            phone: data.phone,
+            address: data.address,
+          })
+        );
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -103,18 +104,26 @@ const page: React.FC = () => {
           duration: 3000,
         });
       }
+    } finally {
+      setLoading(false); // Stop loader
     }
   };
-
 
   return (
     <div className="flex items-center justify-center h-screen w-full relative">
       <Toaster richColors closeButton />
-      {/* Card Container - Adjusting width and z-index */}
-      <div className="flex flex-col sm:flex-row w-full sm:w-4/5 lg:w-2/3 xl:w-1/2 bg-gray-400 bg-opacity-30 rounded-xl relative z-10">
 
+      {/* Loader */}
+      {loading && (
+        <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-50">
+          <Loader />
+        </div>
+      )}
+
+      {/* Card Container */}
+      <div className="flex flex-col sm:flex-row w-full sm:w-4/5 lg:w-2/3 xl:w-1/2 bg-gray-400 bg-opacity-30 rounded-xl relative z-10">
         {/* Left Section (Image) */}
-        <div className="flex justify-center items-center w-full rounded-l-lg p-6  md:block lg:block xl:block">
+        <div className="flex justify-center items-center w-full rounded-l-lg p-6 md:block lg:block xl:block">
           <img
             src="/login.png"
             alt="Virtual Try On"
@@ -128,7 +137,6 @@ const page: React.FC = () => {
             Log in to Virtual Try On
           </h2>
           <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-4">
-
             <div>
               <label
                 htmlFor="email"
@@ -143,7 +151,6 @@ const page: React.FC = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
-                onFocus={() => toast.info("Email id should be unique", { duration: 2000 })}
                 placeholder="Enter your email"
               />
             </div>
@@ -157,12 +164,12 @@ const page: React.FC = () => {
               </label>
               <div className="relative">
                 <input
-                  type={!iseyevis ? "password" : "text"} id="password"
+                  type={!iseyevis ? "password" : "text"}
+                  id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 mt-2 border border-black text-black font-bold rounded-lg"
-                  onFocus={() => toast.info("password should contain atleast 8 characters", { duration: 2000 })}
                   placeholder="Enter your password"
                 />
                 <VscEye
@@ -195,4 +202,4 @@ const page: React.FC = () => {
   );
 };
 
-export default page;
+export default Page;

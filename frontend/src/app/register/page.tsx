@@ -6,9 +6,11 @@ import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Toaster, toast } from 'sonner';
+import Loader from "@/components/Loader";
 
 const page: React.FC = () => {
   const [iseyevis, setIseyevis] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -26,7 +28,7 @@ const page: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Form validation
     if (!formData.username || !formData.email || !formData.password || !formData.address || !formData.phone) {
       toast.error("Please fill in all fields", {
@@ -35,7 +37,7 @@ const page: React.FC = () => {
       });
       return;
     }
-
+    
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
@@ -45,7 +47,7 @@ const page: React.FC = () => {
       });
       return;
     }
-
+    
     // Phone validation
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(formData.phone)) {
@@ -55,7 +57,7 @@ const page: React.FC = () => {
       });
       return;
     }
-
+    
     // Password validation
     if (formData.password.length < 8) {
       toast.error("Password must be at least 8 characters long", {
@@ -64,8 +66,9 @@ const page: React.FC = () => {
       });
       return;
     }
-
+    
     try {
+      setLoading(true)
       toast.loading("Registering user...");
       const response = await axios.post("/api/register", formData);
       
@@ -99,6 +102,8 @@ const page: React.FC = () => {
           duration: 3000,
         });
       }
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -109,6 +114,7 @@ const page: React.FC = () => {
   return (
     <>
       <Toaster richColors closeButton />
+      {loading&&<Loader/>}
       <div className="flex items-center justify-center w-full relative mt-28">
         <div className="flex flex-col sm:flex-row w-full sm:w-4/5 lg:w-2/3 xl:w-80px bg-gray-400 bg-opacity-30 relative rounded-2xl z-10">
           <div className="flex justify-center items-center w-full rounded-l-lg p-6">

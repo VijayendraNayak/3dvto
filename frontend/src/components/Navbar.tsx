@@ -8,6 +8,7 @@ import { RootState } from "../../store";
 import { CgProfile } from "react-icons/cg";
 import { FaCartShopping } from "react-icons/fa6";
 import { useRouter } from "next/navigation";
+import { FaTruck } from "react-icons/fa";
 
 type Props = {};
 
@@ -30,7 +31,7 @@ const Navbar = (props: Props) => {
         <div className="fixed top-0 left-0 z-50 w-full py-2 bg-gradient-to-r from-purple-200 to-purple-300 border-b-4 border-purple-800 flex justify-around items-center shadow-xl">
             <div className="flex items-center gap-4">
                 <Link
-                    href={(isAuthenticated && user.role === "user") ? "/" : "/admin/dashboard"}
+                    href={(isAuthenticated && user.role === "admin") ? "/admin/dashboard" : "/"}
                     className="flex cursor-pointer items-center gap-4 px-4 bg-white shadow-lg hover:shadow-xl opacity-90 rounded-xl p-2"
                 >
                     <Image src="/logo1.png" alt="logo" width={48} height={48} />
@@ -49,18 +50,27 @@ const Navbar = (props: Props) => {
             ) : (
                 <div className="flex gap-16 items-center cursor-pointer">
                     <div
-                        className="flex gap-2"
+                        className="flex gap-2 hover:scale-105"
                         onClick={() => { router.push('/profile') }}
                     >
                         <CgProfile className="text-3xl font-semibold" />
                         <span className="text-xl">{user?.name}</span>
                     </div>
                     {
-                        user.role === "user" && <div
-                            onClick={() => { router.push('/profile') }}
-                        >
-                            <FaCartShopping className="text-3xl font-semibold" />
-                        </div>
+                        user.role === "user" && (
+                            <div className=" flex gap-16">
+                                <div
+                                    onClick={() => { router.push('/cart') }}
+                                >
+                                    <FaCartShopping className="text-3xl font-semibold hover:scale-105" />
+                                </div>
+                                <div
+                                    onClick={() => { router.push('/order') }}>
+                                    <FaTruck className="text-3xl font-semibold hover:scale-105" />
+                                </div>
+                            </div>
+
+                        )
                     }
 
                 </div>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { toast, Toaster } from 'sonner';
 import Swal from 'sweetalert2';
 import UpdatePop from './UpdatePop';
+import Loader from './Loader';
 
 interface ClothItem {
   name: string;
@@ -17,6 +18,7 @@ interface ClothItem {
 }
 
 const Card: React.FC<{ item: ClothItem }> = ({ item }) => {
+  const [loading, setLoading] = useState<boolean>(false);
   const [isvisible, setIsvisible] = useState<boolean>(false);
   const path = window.location.pathname.includes("/updateitem");
 
@@ -41,6 +43,7 @@ const Card: React.FC<{ item: ClothItem }> = ({ item }) => {
 
     if (result.isConfirmed) {
       try {
+        setLoading(true)
         const response = await axios.delete(`/api/admin/delete-cloth/${id}`)
         if (response.status === 200) {
           console.log("item deleted successfully")
@@ -58,6 +61,8 @@ const Card: React.FC<{ item: ClothItem }> = ({ item }) => {
           position: "top-right",
           duration: 2000
         })
+      }finally{
+        setLoading(false)
       }
     }
   }
@@ -65,6 +70,7 @@ const Card: React.FC<{ item: ClothItem }> = ({ item }) => {
 
   return (
     <div className="bg-white w-72 shadow-md flex flex-col justify-center rounded-lg gap-4 p-4 mb-4">
+      {loading&&<Loader/>}
       <h4 className="text-xl font-semibold text-center">{item.name}</h4>
       <div>
         <p>Id:{item._id}</p>

@@ -1,5 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
+import imageReducer from "./slices/imageSlice"
+import clothReducer from "./slices/clothSlice"
 
 // Function to load the state from localStorage
 const loadFromLocalStorage = () => {
@@ -31,9 +33,13 @@ const preloadedState = loadFromLocalStorage();
 export const store = configureStore({
     reducer: {
         auth: authReducer,
+        image: imageReducer,
+        cloth: clothReducer,
     },
     preloadedState: {
         auth: preloadedState || undefined,
+        image: preloadedState || undefined,
+        cloth: preloadedState || undefined,
     },
 });
 

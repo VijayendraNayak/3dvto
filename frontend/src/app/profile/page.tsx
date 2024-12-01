@@ -1,10 +1,14 @@
 "use client";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store";
+import { useState } from "react";
+import Loader from "@/components/Loader";
 
 const page: React.FC = () => {
+  const [loading, setLoading] = useState<boolean>(false);
   const handleLogout = () => {
     // Clear all cookies
+    setLoading(true)
     document.cookie.split(";").forEach(function (c) {
       document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
@@ -14,6 +18,7 @@ const page: React.FC = () => {
     sessionStorage.clear();
 
     window.location.href = '/';
+    setLoading(false)
 
   };
   const user = useSelector((state: RootState) => state.auth.user);
@@ -21,6 +26,7 @@ const page: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-transparent flex flex-col items-center justify-center px-4 mt-10">
+      {loading&&<Loader/>}
       {/* Profile Section */}
       <div className="bg-white shadow-md rounded-xl p-6 w-full max-w-md text-center relative shadow-black">
         {/* Avatar */}
