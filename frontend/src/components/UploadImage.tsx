@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef, ChangeEvent } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { toast, Toaster } from "sonner";
 import { RiCheckboxCircleLine } from "react-icons/ri";
 import Catalog from "./Catalog";
@@ -16,6 +16,7 @@ const UploadImage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [uploaded, setUploaded] = useState<boolean | null>(false)
     const [loading, setLoading] = useState<boolean | null>(false)
+    const [index, setIndex] = useState<number>(1);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const router = useRouter();
@@ -32,61 +33,123 @@ const UploadImage: React.FC = () => {
     };
 
     const handleImageUpload = async () => {
+        // Check if user is authenticated
         if (!isAuthenticated) {
             toast.warning("The user should be Authenticated to access the resource", {
                 position: "top-right",
-                duration: 2000
-            })
+                duration: 2000,
+            });
             setTimeout(() => {
                 router.push('/login'); // Redirect to login if not authenticated
-            }, 2000)
+            }, 2000);
             return;
         }
-
+    
+        // Validate file selection
         if (!file) {
             setError("Please select a file first.");
             return;
         }
-
+    
+        // Create form data for upload
         const formData = new FormData();
-        formData.append("file", file);
-
+        formData.append("image", file);
+        formData.append("index", String(index));
+    
         try {
+            // Reset previous errors and set loading state
             setError(null);
             setLoading(true);
-            const uploadResponse = await axios.post("/api/upload", formData, {
+    
+            // Send request to start cartoonization
+            const CartoonResponse = await axios.post("/api/cartoonize", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
-
-            const uploadUrl = uploadResponse.data.url;
-            if (uploadUrl) {
-                dispatch(uploadImage({ image: uploadUrl }))
-                setUploaded(true);
-                toast.success("Image uploaded successfully", {
+    
+            const task_id = CartoonResponse.data.task_id;
+    
+            if (task_id) {
+                toast.info("Your image is being processed. Please wait...", {
                     position: "top-right",
-                    duration: 2000,
+                    duration: 3000,
                 });
+    
+                // Wait for 30 seconds before checking the result
+                await new Promise(resolve => setTimeout(resolve, 30000));
+    
+                try {
+                    const uploadResponse = await axios.get('/api/get_result', {
+                        params: { task_id: task_id }
+                    });
+    
+                    const { status, image_url, result_url } = uploadResponse.data;
+    
+                    // Handle successful processing
+                    if (status === 'success' || status === 'PROCESS_SUCCESS' || status === 'COMPLETED') {
+                        const processingUrl = image_url || result_url;
+                        
+                        if (processingUrl) {
+                            dispatch(uploadImage({ image: processingUrl }));
+                            setUploaded(true);
+                            setLoading(false);
+                            toast.success("Image processed successfully", {
+                                position: "top-right",
+                                duration: 2000,
+                            });
+                        } else {
+                            throw new Error('No image URL received');
+                        }
+                    } else {
+                        throw new Error('Processing failed');
+                    }
+                } catch (error:AxiosError | Error) {
+                    // Check if error response contains successful status
+                    if (error.response && error.response.data) {
+                        const { status, result_url } = error.response.data;
+                        
+                        if ((status === 'PROCESS_SUCCESS' || status === 'COMPLETED') && result_url) {
+                            dispatch(uploadImage({ image: result_url }));
+                            setUploaded(true);
+                            setLoading(false);
+                            toast.success("Image processed successfully", {
+                                position: "top-right",
+                                duration: 2000,
+                            });
+                            return;
+                        }
+                    }
+    
+                    // Handle retrieval error
+                    setLoading(false);
+                    setError("Failed to retrieve processed image.");
+                    toast.error("Failed to retrieve processed image. Please try again.", {
+                        position: "top-right",
+                        duration: 2000,
+                    });
+                }
             } else {
-                setError("Upload failed. Please try again.");
-                toast.error("Image upload unsuccessful", {
+                // Handle case where task_id is not received
+                setLoading(false);
+                setError("Failed to start the cartoonization job. Please try again.");
+                toast.error("Failed to start the cartoonization job. Please try again.", {
                     position: "top-right",
                     duration: 2000,
                 });
             }
-            setLoading(false);
         } catch (err) {
+            // Handle initial upload error
             console.error(err);
+            setLoading(false);
             setError("An error occurred during the upload.");
             toast.error("An error occurred during the upload.", {
                 position: "top-right",
                 duration: 2000,
             });
-            setLoading(false);
         }
     };
-
+    
     return (
         <div className="flex flex-col bg-gray-400 bg-opacity-30 mt-20">
             <div className="flex flex-row ">
