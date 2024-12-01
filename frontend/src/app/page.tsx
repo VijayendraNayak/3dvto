@@ -84,8 +84,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Second Section */}
-      <UploadImage/>
+      <section id="second-section">
+
+      <UploadImage />
+      </section>
       
     </main>
   );

@@ -1,105 +1,137 @@
 "use client";
 import React, { useState } from "react";
-import Link from "next/link";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Toaster, toast } from "sonner";
+import axios from "axios";
 import Sidebar from "@/components/Admin_sidebar";
+
 const AddStock = () => {
   const [formData, setFormData] = useState({
-    clothId: "",
-    clothType: "",
-    size: "",
+    name: "",
+    category: "",
+    sizes: "", // Changed to a plain string
     color: "",
     stock: "",
     price: "",
+    image: null, // Changed to null for file
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData({ ...formData, image: e.target.files[0] });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Stock Added:", formData);
 
-    // Logic to save stock to the database or state goes here.
+    const data = new FormData();
+    data.append("name", formData.name);
+    data.append("category", formData.category);
+    data.append("sizes",formData.sizes); // Convert sizes to array
+    data.append("color", formData.color);
+    data.append("stock", formData.stock);
+    data.append("price", formData.price);
+    if (formData.image) {
+      data.append("image", formData.image);
+    }
 
-    // Show success toast
-    toast.success("Stock added successfully!");
+    try {
+      const response = await axios.post("/api/admin/add-cloth", data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-    // Reset the form after submission
-    setFormData({
-      clothId: "",
-      clothType: "",
-      size: "",
-      color: "",
-      stock: "",
-      price: "",
-    });
+      if (response.status === 201 || response.status === 200) {
+        toast.success("Stock added successfully!", {
+          position: "top-right",
+          duration: 2000,
+        });
+
+        // Reset the form
+        setFormData({
+          name: "",
+          category: "",
+          sizes: "",
+          color: "",
+          stock: "",
+          price: "",
+          image: null,
+        });
+      } else {
+        toast.error(response.data.error || "Something went wrong");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Error submitting form");
+    }
   };
 
   return (
     <div className="relative flex min-h-screen bg-transparent">
       {/* Sidebar */}
-      <Sidebar/>
+      <Sidebar />
 
       {/* Main Content */}
       <main className="flex-1 p-6 mt-20">
         <h1 className="text-2xl font-bold mb-6">Add Stock</h1>
-        <form className="bg-gray-100 opacity-2 shadow-md rounded-md p-6" onSubmit={handleSubmit}>
+        <form
+          className="bg-gray-100 shadow-md rounded-md p-6"
+          onSubmit={handleSubmit}
+        >
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="clothId" className="block font-semibold">
-                Cloth ID
+              <label htmlFor="name" className="block font-semibold">
+                Name
               </label>
               <input
                 type="text"
-                id="clothId"
-                name="clothId"
-                value={formData.clothId}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
-                placeholder="Enter Cloth ID"
+                placeholder="Enter Name"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="clothType" className="block font-semibold">
-                Cloth Type
+              <label htmlFor="category" className="block font-semibold">
+                Category
               </label>
               <input
                 type="text"
-                id="clothType"
-                name="clothType"
-                value={formData.clothType}
+                id="category"
+                name="category"
+                value={formData.category}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
-                placeholder="Enter Cloth Type"
+                placeholder="Enter Category"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="size" className="block font-semibold">
-                Size
+              <label htmlFor="sizes" className="block font-semibold">
+                Sizes
               </label>
-              <select
-                id="size"
-                name="size"
-                value={formData.size}
+              <input
+                type="text"
+                id="sizes"
+                name="sizes"
+                value={formData.sizes}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
+                placeholder="Enter Sizes (e.g., S, M, L, XL)"
                 required
-              >
-                <option value="" disabled>
-                  Select Size
-                </option>
-                <option value="S">Small</option>
-                <option value="M">Medium</option>
-                <option value="L">Large</option>
-                <option value="XL">Extra Large</option>
-              </select>
+              />
             </div>
 
             <div>
@@ -123,7 +155,7 @@ const AddStock = () => {
                 Stock
               </label>
               <input
-                type="number"
+                type="text"
                 id="stock"
                 name="stock"
                 value={formData.stock}
@@ -139,13 +171,27 @@ const AddStock = () => {
                 Price
               </label>
               <input
-                type="number"
+                type="text"
                 id="price"
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
                 placeholder="Enter Price"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="image" className="block font-semibold">
+                Upload Image
+              </label>
+              <input
+                type="file"
+                id="image"
+                name="image"
+                onChange={handleFileChange}
+                className="w-full p-2 border rounded"
                 required
               />
             </div>
@@ -156,13 +202,13 @@ const AddStock = () => {
               type="submit"
               className="px-6 py-2 bg-blue-800 text-white rounded hover:bg-blue-700"
             >
-              Add Stock
+              Add Item
             </button>
           </div>
         </form>
 
         {/* Toast Container for Notifications */}
-        <ToastContainer />
+        <Toaster richColors />
       </main>
     </div>
   );

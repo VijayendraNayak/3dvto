@@ -118,12 +118,12 @@ const UploadImage: React.FC = () => {
                     <h2 className="text-2xl md:text-4xl font-bold text-center mb-8">
                         Upload Image
                     </h2>
-                    <div className="relative bg-white border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center">
+                    <div className="relative bg-white border-2  text-center border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center">
                         <div className="text-center">
                             <img
                                 src="/upload.png"
                                 alt="Upload Icon"
-                                className="mb-4 w-12 md:w-16 h-12 md:h-16"
+                                className="mb-4 w-12 md:w-16 h-12 md:h-16 mx-auto"
                             />
                             <p className="text-sm md:text-base text-gray-500 mb-4">
                                 Drag an image here or click to upload
