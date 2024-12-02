@@ -1,106 +1,91 @@
-"use client"
+"use client";
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 type ModelViewerProps = {
   modelUrl: string;
-  backgroundColor?: number;
-  rotationSpeed?: number;
 };
 
-const ModelViewer: React.FC<ModelViewerProps> = ({ 
-  modelUrl, 
-  backgroundColor = 0xffffff, 
-  rotationSpeed = 0.01 
-}) => {
+const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const modelRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined' || !mountRef.current) return;
+    if (!mountRef.current) return;
 
-    // Scene setup
+    // Setup scene, camera, and renderer
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(backgroundColor);
-    sceneRef.current = scene;
-
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(
-      75, 
-      window.innerWidth / window.innerHeight, 
-      0.1, 
-      1000
-    );
-    camera.position.z = 5;
-    cameraRef.current = camera;
-
-    // Renderer setup
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0xffffff, 1.0);
+
+    // Set renderer size to match parent
+    const { clientWidth, clientHeight } = mountRef.current;
+    renderer.setSize(clientWidth, clientHeight);
+    camera.aspect = clientWidth / clientHeight;
+    camera.updateProjectionMatrix();
+
     mountRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
-
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5).normalize();
+    directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
 
-    // Model loading
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    camera.position.set(0, 0, 5);
+    controls.update();
+
+    // Load model
+    let loadedModel: THREE.Group | null = null;
     const loader = new GLTFLoader();
     loader.load(
       modelUrl,
       (gltf) => {
-        const model = gltf.scene;
-        scene.add(model);
-        modelRef.current = model;
+        loadedModel = gltf.scene;
+        loadedModel.scale.set(2, 2, 2);
+        scene.add(loadedModel);
       },
       undefined,
-      // (error) => console.error('An error occurred loading the model:', error)
+      (error) => console.error('Error loading model:', error)
     );
 
     // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
-      
-      if (modelRef.current) {
-        modelRef.current.rotation.y += rotationSpeed;
-      }
-      
+      if (loadedModel) loadedModel.rotation.y += 0.01;
+      controls.update();
       renderer.render(scene, camera);
     };
     animate();
 
-    // Resize handler
+    // Cleanup
     const handleResize = () => {
-      if (camera && renderer) {
-        camera.aspect = window.innerWidth / window.innerHeight;
+      if (mountRef.current) {
+        const { clientWidth, clientHeight } = mountRef.current;
+        renderer.setSize(clientWidth, clientHeight);
+        camera.aspect = clientWidth / clientHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
       }
     };
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-      
       renderer.dispose();
+      if (mountRef.current) {
+        mountRef.current.innerHTML = '';
+      }
     };
-  }, [modelUrl, backgroundColor, rotationSpeed]);
+  }, [modelUrl]);
 
-  return <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />;
+  return <div ref={mountRef} className="w-full h-full" />;
 };
 
 export default ModelViewer;

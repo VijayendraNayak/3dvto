@@ -20,8 +20,12 @@ const UploadImage: React.FC = () => {
     const [loading, setLoading] = useState<boolean | null>(false)
     const [index, setIndex] = useState<number>(1);
     const [display, setDisplay] = useState<boolean>(false)
+    const [threedurl, setThreedurl] = useState<string | null>(null)
+    const [hide, setHide] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+    const isClothSelected = useSelector((state: RootState) => state.cloth.isClothSelected);
+
     const router = useRouter();
     const dispatch = useDispatch();
 
@@ -33,6 +37,8 @@ const UploadImage: React.FC = () => {
             top: window.scrollY + scrollheight,
             behavior: "smooth"
         })
+        //api calls for image wrapping
+        setHide(true);
     }
 
     const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
@@ -233,18 +239,20 @@ const UploadImage: React.FC = () => {
                     <Catalog />
                 </section>
             </div>
-            {uploaded && <div className="flex flex-col gap-8 bg-gray-400 bg-opacity-30 min-h-screen">
-                <div className="flex justify-center flex-col">
-                    <button className="bg-gradient-to-r from-purple-400 w-80 to-purple-500 hover:bg-gradient-to-r hover:from-purple-400 hover:to-purple-500 px-12 py-4 font-semibold text-white text-2xl mx-auto rounded-full cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200"
-                        onClick={handleProceedClick}
-                    >
-                        Proceed
-                    </button>
+            {uploaded && isClothSelected && !hide && (
+                <div className="flex flex-col gap-8 bg-gray-400 bg-opacity-30 min-h-screen">
+                    <div className="flex justify-center flex-col">
+                        <button
+                            className="bg-gradient-to-r from-purple-400 w-80 to-purple-500 hover:bg-gradient-to-r hover:from-purple-400 hover:to-purple-500 px-12 py-4 font-semibold text-white text-2xl mx-auto rounded-full cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200"
+                            onClick={handleProceedClick}
+                        >
+                            Proceed
+                        </button>
+                    </div>
+                    {display && <Display imglink={threedurl} />}
                 </div>
-                {
-                    display && <Display />
-                }
-            </div>}
+            )}
+
 
         </div>
     );
