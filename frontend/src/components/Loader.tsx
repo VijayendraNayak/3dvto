@@ -31,15 +31,9 @@ const Loader = ({ color = "#800080" }: LoaderProps) => {
         visible={true}
       />
       <p
-        style={{
-          marginTop: "20px", // Add some space between spinner and text
-          fontSize: "18px",
-          color: "#333", // Text color
-          fontWeight: "500",
-          textAlign: "center",
-        }}
+        className="text-center text-purple-500 font-semibold mt-8"
       >
-        Be patient, it may take a while...
+        Please be patient, it will take a while...
       </p>
     </div>
   );

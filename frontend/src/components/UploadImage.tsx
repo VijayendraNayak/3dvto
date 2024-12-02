@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { uploadImage } from "../../store/slices/imageSlice";
 import Loader from "./Loader";
+import Display from "./Display";
 
 const UploadImage: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -18,11 +19,21 @@ const UploadImage: React.FC = () => {
     const [uploaded, setUploaded] = useState<boolean | null>(false)
     const [loading, setLoading] = useState<boolean | null>(false)
     const [index, setIndex] = useState<number>(1);
+    const [display, setDisplay] = useState<boolean>(false)
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const router = useRouter();
     const dispatch = useDispatch();
-    
+
+    const handleProceedClick = () => {
+        setDisplay(true)
+        const height = window.innerHeight;
+        const scrollheight = height * 0.85;
+        window.scrollTo({
+            top: window.scrollY + scrollheight,
+            behavior: "smooth"
+        })
+    }
 
     const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0] || null;
@@ -46,53 +57,53 @@ const UploadImage: React.FC = () => {
             }, 2000);
             return;
         }
-        
+
         // Validate file selection
         if (!file) {
             setError("Please select a file first.");
             return;
         }
-        
+
         // Create form data for upload
         const formData = new FormData();
         formData.append("image", file);
         formData.append("index", String(index));
-        
+
         try {
             // Reset previous errors and set loading state
             setError(null);
             setLoading(true);
 
-    
+
             // Send request to start cartoonization
             const CartoonResponse = await axios.post("/api/cartoonize", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
-    
+
             const task_id = CartoonResponse.data.task_id;
-    
+
             if (task_id) {
                 toast.info("Your image is being processed. Please wait...", {
                     position: "top-right",
                     duration: 3000,
                 });
-    
+
                 // Wait for 30 seconds before checking the result
                 await new Promise(resolve => setTimeout(resolve, 30000));
-    
+
                 try {
                     const uploadResponse = await axios.get('/api/get_result', {
                         params: { task_id: task_id }
                     });
-    
+
                     const { status, image_url, result_url } = uploadResponse.data;
-    
+
                     // Handle successful processing
                     if (status === 'success' || status === 'PROCESS_SUCCESS' || status === 'COMPLETED') {
                         const processingUrl = image_url || result_url;
-                        
+
                         if (processingUrl) {
                             dispatch(uploadImage({ image: processingUrl }));
                             setUploaded(true);
@@ -107,11 +118,11 @@ const UploadImage: React.FC = () => {
                     } else {
                         throw new Error('Processing failed');
                     }
-                } catch (error:AxiosError | Error) {
+                } catch (error: AxiosError | Error) {
                     // Check if error response contains successful status
                     if (error.response && error.response.data) {
                         const { status, result_url } = error.response.data;
-                        
+
                         if ((status === 'PROCESS_SUCCESS' || status === 'COMPLETED') && result_url) {
                             dispatch(uploadImage({ image: result_url }));
                             setUploaded(true);
@@ -123,7 +134,7 @@ const UploadImage: React.FC = () => {
                             return;
                         }
                     }
-    
+
                     // Handle retrieval error
                     setLoading(false);
                     setError("Failed to retrieve processed image.");
@@ -152,10 +163,10 @@ const UploadImage: React.FC = () => {
             });
         }
     };
-    
+
     return (
         <div className="flex flex-col bg-gray-400 bg-opacity-30 mt-20">
-            {loading&&<Loader/>}
+            {loading && <Loader />}
             <div className="flex flex-row ">
                 <section className=" flex-1 relative min-h-screen bg-gray-400 bg-opacity-30 flex items-center justify-center  px-4">
                     <div className="relative max-w-4xl mx-auto px-4 py-16 sm:px-8 md:px-12 lg:py-20">
@@ -222,13 +233,19 @@ const UploadImage: React.FC = () => {
                     <Catalog />
                 </section>
             </div>
-            <div className="flex flex-col bg-gray-400 bg-opacity-30 min-h-screen">
-                <div className="flex justify-center">
-                    <button className="bg-gradient-to-r from-green-400 to-green-500 hover:bg-gradient-to-r hover:from-green-400 hover:to-green-500 px-12 py-4 font-semibold text-white text-xl rounded-full cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200">
+            {uploaded && <div className="flex flex-col gap-8 bg-gray-400 bg-opacity-30 min-h-screen">
+                <div className="flex justify-center flex-col">
+                    <button className="bg-gradient-to-r from-purple-400 w-80 to-purple-500 hover:bg-gradient-to-r hover:from-purple-400 hover:to-purple-500 px-12 py-4 font-semibold text-white text-2xl mx-auto rounded-full cursor-pointer transform hover:scale-105 hover:shadow-lg transition duration-200"
+                        onClick={handleProceedClick}
+                    >
                         Proceed
                     </button>
                 </div>
-            </div>
+                {
+                    display && <Display />
+                }
+            </div>}
+
         </div>
     );
 };
