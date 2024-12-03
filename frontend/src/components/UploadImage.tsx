@@ -32,7 +32,7 @@ const UploadImage: React.FC = () => {
     const handleProceedClick = () => {
         setDisplay(true)
         const height = window.innerHeight;
-        const scrollheight = height * 0.85;
+        const scrollheight = height * 0.90;
         window.scrollTo({
             top: window.scrollY + scrollheight,
             behavior: "smooth"
