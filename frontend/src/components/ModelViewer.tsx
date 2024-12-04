@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import React, { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 type ModelViewerProps = {
   modelUrl: string;
@@ -14,28 +14,25 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Setup scene, camera, and renderer
+    // Setup Three.js scene, camera, renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setClearColor(0xffffff, 1.0);
 
-    // Set renderer size to match parent
+    // Append renderer to DOM
     const { clientWidth, clientHeight } = mountRef.current;
     renderer.setSize(clientWidth, clientHeight);
     camera.aspect = clientWidth / clientHeight;
     camera.updateProjectionMatrix();
-
     mountRef.current.appendChild(renderer.domElement);
 
-    // Lighting
+    // Add lighting and controls
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
-
-    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -53,7 +50,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
         scene.add(loadedModel);
       },
       undefined,
-      (error) => console.error('Error loading model:', error)
+      (error) => console.error("Error loading model:", error)
     );
 
     // Animation loop
@@ -65,7 +62,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
     };
     animate();
 
-    // Cleanup
+    // Resize handling
     const handleResize = () => {
       if (mountRef.current) {
         const { clientWidth, clientHeight } = mountRef.current;
@@ -74,13 +71,34 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
         camera.updateProjectionMatrix();
       }
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
+    // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
+
+      // Dispose of loaded model
+      if (loadedModel) {
+        scene.remove(loadedModel);
+        loadedModel.traverse((object) => {
+          if ((object as THREE.Mesh).geometry) {
+            (object as THREE.Mesh).geometry.dispose();
+          }
+          if ((object as THREE.Mesh).material) {
+            const material = (object as THREE.Mesh).material;
+            if (Array.isArray(material)) {
+              material.forEach((mat) => mat.dispose());
+            } else {
+              material.dispose();
+            }
+          }
+        });
+      }
+
+      // Dispose of renderer
       renderer.dispose();
       if (mountRef.current) {
-        mountRef.current.innerHTML = '';
+        mountRef.current.innerHTML = "";
       }
     };
   }, [modelUrl]);
