@@ -529,7 +529,7 @@ def upload_image():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        local_path = os.path.join("/tmp", filename)  # Save temporarily before uploading to Firebase
+        local_path = os.path.join("./uploads", filename)  # Save temporarily before uploading to Firebase
         file.save(local_path)
         
         # Upload to Firebase Storage

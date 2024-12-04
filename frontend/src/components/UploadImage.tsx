@@ -14,6 +14,7 @@ import Display from "./Display";
 
 const UploadImage: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
+    const [wrappedfile, setWrappedfile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [uploaded, setUploaded] = useState<boolean | null>(false)
@@ -25,11 +26,12 @@ const UploadImage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const isClothSelected = useSelector((state: RootState) => state.cloth.isClothSelected);
+    const cloth=useSelector((state:RootState)=>state.cloth.cloth)
 
     const router = useRouter();
     const dispatch = useDispatch();
 
-    const handleProceedClick = () => {
+    const handleProceedClick =async () => {
         setDisplay(true)
         const height = window.innerHeight;
         const scrollheight = height * 0.90;
@@ -37,42 +39,16 @@ const UploadImage: React.FC = () => {
             top: window.scrollY + scrollheight,
             behavior: "smooth"
         })
-        //api calls for image wrapping
-        setHide(true);
-    }
+        //api calls for image wrapping set teh latest image in the setwrappedfile() here after the wrapping part
+        //get the user image from the useState "File" and the cloth image from "cloth.thumbnail_path"
+        //set the generated new file in the state named wrappefile using the setWrapfile() method
 
-    const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0] || null;
-        setFile(selectedFile);
-        if (selectedFile) {
-            const preview = URL.createObjectURL(selectedFile);
-            setPreviewUrl(preview);
-            setError(null);
-        }
-    };
-
-    const handleImageUpload = async () => {
-        // Check if user is authenticated
-        if (!isAuthenticated) {
-            toast.warning("The user should be Authenticated to access the resource", {
-                position: "top-right",
-                duration: 2000,
-            });
-            setTimeout(() => {
-                router.push('/login'); // Redirect to login if not authenticated
-            }, 2000);
-            return;
-        }
-
-        // Validate file selection
-        if (!file) {
+        if (!wrappedfile) {
             setError("Please select a file first.");
             return;
         }
-
-        // Create form data for upload
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append("image", wrappedfile);
         formData.append("index", String(index));
 
         try {
@@ -111,7 +87,7 @@ const UploadImage: React.FC = () => {
                         const processingUrl = image_url || result_url;
 
                         if (processingUrl) {
-                            dispatch(uploadImage({ image: processingUrl }));
+                            setThreedurl(processingUrl)
                             setUploaded(true);
                             setLoading(false);
                             toast.success("Image processed successfully", {
@@ -130,7 +106,7 @@ const UploadImage: React.FC = () => {
                         const { status, result_url } = error.response.data;
 
                         if ((status === 'PROCESS_SUCCESS' || status === 'COMPLETED') && result_url) {
-                            dispatch(uploadImage({ image: result_url }));
+                            setThreedurl(result_url)
                             setUploaded(true);
                             setLoading(false);
                             toast.success("Image processed successfully", {
@@ -167,6 +143,73 @@ const UploadImage: React.FC = () => {
                 position: "top-right",
                 duration: 2000,
             });
+        }
+        setHide(true);
+    }
+
+    const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0] || null;
+        setFile(selectedFile);
+        if (selectedFile) {
+            const preview = URL.createObjectURL(selectedFile);
+            setPreviewUrl(preview);
+            setError(null);
+        }
+    };
+
+    const handleImageUpload = async () => {
+        if (!isAuthenticated) {
+            toast.warning("The user should be Authenticated to access the resource", {
+                position: "top-right",
+                duration: 2000
+            })
+            setTimeout(() => {
+                router.push('/login'); // Redirect to login if not authenticated
+            }, 2000)
+            return;
+        }
+
+        if (!file) {
+            setError("Please select a file first.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            setError(null);
+            setLoading(true);
+            const uploadResponse = await axios.post("/api/upload", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            const uploadUrl = uploadResponse.data.url;
+            if (uploadUrl) {
+                dispatch(uploadImage({ image: uploadUrl }))
+                setUploaded(true);
+                toast.success("Image uploaded successfully", {
+                    position: "top-right",
+                    duration: 2000,
+                });
+            } else {
+                setError("Upload failed. Please try again.");
+                toast.error("Image upload unsuccessful", {
+                    position: "top-right",
+                    duration: 2000,
+                });
+            }
+            setLoading(false);
+        } catch (err) {
+            console.error(err);
+            setError("An error occurred during the upload.");
+            toast.error("An error occurred during the upload.", {
+                position: "top-right",
+                duration: 2000,
+            });
+            setLoading(false);
         }
     };
 
