@@ -1,6 +1,6 @@
 "use client";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Loader from "./Loader";
 import ModelViewer from "./ModelViewer";
 import { RootState } from "../../store";
@@ -8,47 +8,36 @@ import { useSelector } from "react-redux";
 import { toast, Toaster } from "sonner";
 import { FaCartShopping } from "react-icons/fa6";
 
-interface CartItem {
-    user_id: string;
-    cloth: {
-      _id: string;
-      name: string;
-      category: string;
-      price: string;
-      color: string;
-      sizes: string; 
-      thumbnail_path: string;
-    };
-    quantity: number;
-  }  
-
-const Display: React.FC<{ imglink: string }> = ({ imglink }) => {
+const Display: React.FC<{ imglink: string, modellink: string }> = ({ imglink, modellink }) => {
+    // Use useCallback to memoize the functions
     const [isClicked, setIsClicked] = useState(false);
-    const [url, setUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [modelUrl, setModelUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const user = useSelector((state: RootState) => state.auth.user) || null;
-    const cloth = useSelector((state: RootState) => state.cloth.cloth) || null;
-    const [formData, setFormData]=useState<CartItem|null>(null);
-    useEffect(() => {
-        if (user && cloth) {
-          // Set formData based on user and cloth values
-          setFormData({
-            user_id: user.id, // Assuming the user object has an `id` field
+
+    const user = useSelector((state: RootState) => state.auth.user);
+    const cloth = useSelector((state: RootState) => state.cloth.cloth);
+
+    // Memoize formData creation
+    const formData = useMemo(() => {
+        if (!user || !cloth) return null;
+        return {
+            user_id: user.id,
             cloth: {
-              _id: cloth.id,
-              name: cloth.name,
-              category: cloth.category,
-              price: cloth.price,
-              color: cloth.color,
-              sizes: cloth.sizes, // Adjust this if sizes are stored differently
-              thumbnail_path: cloth.thumbnail_path,
+                _id: cloth.id,
+                name: cloth.name,
+                category: cloth.category,
+                price: cloth.price,
+                color: cloth.color,
+                sizes: cloth.sizes,
+                thumbnail_path: cloth.thumbnail_path,
             },
-            quantity: 1, // Default quantity, can be updated as needed
-          });
-        }
-      }, [user, cloth]); // Run effect whenever user or cloth changes
+            quantity: 1,
+        };
+    }, [user, cloth]);
+
+    // Rest of the component remains the same...
+
 
 
     const handleButtonClick = async () => {
@@ -60,7 +49,7 @@ const Display: React.FC<{ imglink: string }> = ({ imglink }) => {
             const createModelResponse = await axios.post(
                 "http://localhost:5000/api/create-3d-model",
                 {
-                    image_url: url,
+                    image_url: modellink,
                 },
                 {
                     headers: { "Content-Type": "application/json" },
@@ -95,33 +84,33 @@ const Display: React.FC<{ imglink: string }> = ({ imglink }) => {
     };
     const handleCartClick = async () => {
         setLoading(true);
-        try{
-            const response = await axios.post("/api/cart/add",formData)
-            if(response.status===201){
-                toast.success("Item added to cart successfully",{
-                    position:"top-right",
-                    duration:2000
+        try {
+            const response = await axios.post("/api/cart/add", formData)
+            if (response.status === 201) {
+                toast.success("Item added to cart successfully", {
+                    position: "top-right",
+                    duration: 2000
                 })
-            }else{
-                toast.error("Error adding item to the cart",{
-                    position:"top-right",
-                    duration:2000
+            } else {
+                toast.error("Error adding item to the cart", {
+                    position: "top-right",
+                    duration: 2000
                 })
             }
-        }catch(err){
+        } catch (err) {
             console.log(err)
-            toast.error("Error adding item",{
-                position:"top-right",
-                duration:2000
+            toast.error("Error adding item", {
+                position: "top-right",
+                duration: 2000
             })
-        }finally{
+        } finally {
             setLoading(false);
         }
     }
 
     return (
         <div className="flex flex-col relative items-center justify-center h-screen mt-12 px-4">
-            <Toaster richColors/>
+            <Toaster richColors />
             {loading && <Loader />}
             <div className="flex w-full h-full">
                 {/* Left Section */}
@@ -129,11 +118,14 @@ const Display: React.FC<{ imglink: string }> = ({ imglink }) => {
                     className={`transition-all duration-500 ${isClicked ? "w-1/2" : "w-full"
                         } flex justify-center items-center p-4`}
                 >
-                    <img
-                        src={imglink}
-                        alt="2D Image"
-                        className="max-w-full max-h-full object-contain"
-                    />
+                    {
+                        imglink &&
+                        <img
+                            src={imglink}
+                            alt="2D Image"
+                            className="max-w-full max-h-full object-contain"
+                        />
+                    }
                 </div>
 
                 {/* Right Section */}
@@ -144,7 +136,6 @@ const Display: React.FC<{ imglink: string }> = ({ imglink }) => {
                 )}
             </div>
             <div className="flex justify-center items-center mb-12">
-                {/* Button positioned to stay at the bottom */}
                 {!isClicked ? (
                     <button
                         onClick={handleButtonClick}

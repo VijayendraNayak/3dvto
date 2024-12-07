@@ -3,7 +3,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 // Define the structure of the image data
 interface ImagePayload {
   image: string;
-  imageBlob: Blob | File; // The actual image data
 }
 
 // Define the shape of the slice state

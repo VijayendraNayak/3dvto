@@ -652,109 +652,45 @@ def get_cartoonized_image():
 def serve_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# Error handlers
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'status': 'error', 'message': 'Route not found'}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
-
-# wrapping of cloth
-#intialize gradio client
-# client = Client("yisol/IDM-VTON")
-
-# # Directory to save output images
-# output_dir = "output"
-# if not os.path.exists(output_dir):
-#     os.makedirs(output_dir)
-
-# @app.route('/wrap-images', methods=['POST'])
-# def wrap_images():
-#     """
-#     Wrap garment on the background image using local file uploads.
-#     """
-#     # Check if files are included in the request
-#     if 'background_image' not in request.files or 'garment_image' not in request.files:
-#         return jsonify({"status": "error", "message": "Both background and garment image files are required"}), 400
-
-#     try:
-#         # Save the uploaded files locally
-#         background_file = request.files['background_image']
-#         garment_file = request.files['garment_image']
-#         background_image_path = os.path.join(output_dir, "background_image.jpg")
-#         garment_image_path = os.path.join(output_dir, "garment_image.jpg")
-
-#         background_file.save(background_image_path)
-#         garment_file.save(garment_image_path)
-
-#         # Make the Gradio API call using the saved local files
-#         result = client.predict(
-#             dict={
-#                 "background": file(background_image_path),
-#                 "layers": [],
-#                 "composite": None
-#             },
-#             garm_img=file(garment_image_path),
-#             garment_des="Hello!!",
-#             is_checked=True,
-#             is_checked_crop=False,  # You can experiment with this setting
-#             denoise_steps=30,
-#             seed=42,
-#             api_name="/tryon"
-#         )
-
-#         # Define output paths
-#         output_image_path = os.path.join(output_dir, "wrapped_image.png")
-#         masked_image_path = os.path.join(output_dir, "masked_image.png")
-
-#         # Save the output images if the result contains valid file paths
-#         if isinstance(result[0], str):  # Output image path
-#             with open(result[0], "rb") as src_file:
-#                 with open(output_image_path, "wb") as dest_file:
-#                     dest_file.write(src_file.read())
-
-#         if isinstance(result[1], str):  # Masked image path
-#             with open(result[1], "rb") as src_file:
-#                 with open(masked_image_path, "wb") as dest_file:
-#                     dest_file.write(src_file.read())
-
-#         # Return the response with output image paths
-#         return jsonify({
-#             "status": "success",
-#             "message": "Images wrapped successfully",
-#             "output_image_path": output_image_path,
-#             "masked_image_path": masked_image_path
-#         }), 200
-
-#     except Exception as e:
-#         return jsonify({"status": "error", "message": f"Failed to process images: {str(e)}"}), 500
-
-def try_on_request_with_retry(payload, headers, retries=3, delay=5):
+def try_on_request_with_retry(payload, headers, max_retries=5, initial_delay=5):
     conn = http.client.HTTPSConnection("virtual-try-on4.p.rapidapi.com")
-    for attempt in range(retries):
+    delay = initial_delay
+    
+    for attempt in range(max_retries):
         try:
             conn.request("POST", "/tryon", payload, headers)
             res = conn.getresponse()
             response_data = res.read()
+            
             print(f"Attempt {attempt + 1}: Status {res.status}")
             print(f"Response: {response_data.decode('utf-8')}")
             
+            # Successful response
             if res.status == 200:
                 return response_data
             
+            # Service Unavailable - wait and retry
             if res.status == 503:
+                print(f"Service Unavailable. Waiting {delay} seconds before retry...")
                 time.sleep(delay)
-            else:
-                raise Exception(f"API returned status code {res.status}: {response_data.decode('utf-8')}")
+                # Exponential backoff
+                delay *= 2
+                continue
+            
+            # Other error statuses
+            if res.status >= 400:
+                print(f"Error status received: {res.status}")
+                # Wait before next retry
+                time.sleep(delay)
+                continue
         
         except Exception as e:
             print(f"Error on attempt {attempt + 1}: {str(e)}")
-            if attempt == retries - 1:
-                raise e
-
-    raise Exception("API request failed after several retries")
+            time.sleep(delay)
+            delay *= 2
+    
+    # If all retries fail
+    raise Exception("API request failed after maximum retries")
 
 @app.route('/tryon', methods=['POST'])
 def virtual_try_on():
@@ -774,17 +710,37 @@ def virtual_try_on():
         })
 
         headers = {
-            'x-rapidapi-key': "cd2b7e7a2bmsh80115efd87c2e52p159a30jsn1da42e95f96b",
+            'x-rapidapi-key': "b2e2eef074mshaf8ed860e4f49ebp1250a4jsn1a1a419f1200",
             'x-rapidapi-host': "virtual-try-on4.p.rapidapi.com",
             'Content-Type': "application/json"
         }
 
-        response_data = try_on_request_with_retry(payload, headers)
-        result = json.loads(response_data.decode("utf-8"))
-        return jsonify(result)
+        try:
+            response_data = try_on_request_with_retry(payload, headers)
+            result = json.loads(response_data.decode("utf-8"))
+            return jsonify({"img": result}), 200
+        
+        except Exception as e:
+            # Log the error for server-side tracking
+            print(f"Try-on request failed: {str(e)}")
+            # Return a 500 error with a generic message
+            return jsonify({"error": "Unable to process try-on request"}), 500
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Catch any unexpected errors
+        print(f"Unexpected error in virtual_try_on: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+    
+# Error handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
+
+
 
 
 if __name__ == '__main__':
