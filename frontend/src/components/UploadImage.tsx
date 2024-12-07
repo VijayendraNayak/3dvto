@@ -188,7 +188,7 @@ const UploadImage: React.FC = () => {
 
             const uploadUrl = uploadResponse.data.url;
             if (uploadUrl) {
-                dispatch(uploadImage({ image: uploadUrl }))
+                dispatch(uploadImage({ image: uploadUrl,imageBlob:file }))
                 setUploaded(true);
                 toast.success("Image uploaded successfully", {
                     position: "top-right",
