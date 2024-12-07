@@ -5,14 +5,37 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 type ModelViewerProps = {
-  modelUrl: string;
+  modelUrl: string | null;
 };
 
 const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    controls: OrbitControls;
+    animateId?: number;
+  } | null>(null);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    if (!mountRef.current || !modelUrl) return;
+
+    // If scene already exists, clean up first
+    if (sceneRef.current) {
+      const { scene, renderer, controls, animateId } = sceneRef.current;
+      
+      if (animateId) {
+        cancelAnimationFrame(animateId);
+      }
+      
+      // Remove existing children
+      while (scene.children.length > 0) {
+        scene.remove(scene.children[0]);
+      }
+      
+      renderer.dispose();
+    }
 
     // Setup Three.js scene, camera, renderer
     const scene = new THREE.Scene();
@@ -55,10 +78,15 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
 
     // Animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
+      const animateId = requestAnimationFrame(animate);
       if (loadedModel) loadedModel.rotation.y += 0.01;
       controls.update();
       renderer.render(scene, camera);
+
+      // Store reference for potential cleanup
+      if (sceneRef.current) {
+        sceneRef.current.animateId = animateId;
+      }
     };
     animate();
 
@@ -73,37 +101,58 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
     };
     window.addEventListener("resize", handleResize);
 
+    // Store scene references for potential cleanup
+    sceneRef.current = { scene, camera, renderer, controls };
+
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
 
-      // Dispose of loaded model
-      if (loadedModel) {
-        scene.remove(loadedModel);
-        loadedModel.traverse((object) => {
-          if ((object as THREE.Mesh).geometry) {
-            (object as THREE.Mesh).geometry.dispose();
-          }
-          if ((object as THREE.Mesh).material) {
-            const material = (object as THREE.Mesh).material;
+      if (sceneRef.current) {
+        const { scene, renderer, controls, animateId } = sceneRef.current;
+
+        // Cancel animation frame
+        if (animateId) {
+          cancelAnimationFrame(animateId);
+        }
+
+        // Dispose of all scene children
+        while (scene.children.length > 0) {
+          const child = scene.children[0];
+          scene.remove(child);
+
+          // Dispose of geometries and materials
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            
+            const material = child.material;
             if (Array.isArray(material)) {
               material.forEach((mat) => mat.dispose());
             } else {
               material.dispose();
             }
           }
-        });
+        }
+
+        // Dispose of renderer and controls
+        renderer.dispose();
+        controls.dispose();
       }
 
-      // Dispose of renderer
-      renderer.dispose();
+      // Clear the mount ref
       if (mountRef.current) {
         mountRef.current.innerHTML = "";
       }
+
+      // Reset scene reference
+      sceneRef.current = null;
     };
-  }, [modelUrl]);
+  }, [modelUrl]); // Only re-run when modelUrl changes
+
+  // Render nothing if no modelUrl
+  if (!modelUrl) return null;
 
   return <div ref={mountRef} className="w-full h-full" />;
 };
 
-export default ModelViewer;
+export default React.memo(ModelViewer);

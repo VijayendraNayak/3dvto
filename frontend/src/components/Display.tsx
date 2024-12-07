@@ -1,19 +1,18 @@
-"use client";
-import axios from "axios";
 import React, { useEffect, useMemo, useState } from "react";
-import Loader from "./Loader";
-import ModelViewer from "./ModelViewer";
-import { RootState } from "../../store";
 import { useSelector } from "react-redux";
+import { RootState } from "../../store";
+import axios from "axios";
 import { toast, Toaster } from "sonner";
+import Loader from "./Loader";
 import { FaCartShopping } from "react-icons/fa6";
+import ModelViewer from "./ModelViewer";
 
 const Display: React.FC<{ imglink: string, modellink: string }> = ({ imglink, modellink }) => {
-    // Use useCallback to memoize the functions
     const [isClicked, setIsClicked] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [modelUrl, setModelUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const user = useSelector((state: RootState) => state.auth.user);
     const cloth = useSelector((state: RootState) => state.cloth.cloth);
@@ -36,9 +35,55 @@ const Display: React.FC<{ imglink: string, modellink: string }> = ({ imglink, mo
         };
     }, [user, cloth]);
 
-    // Rest of the component remains the same...
+    // Effect to check task status
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
 
+        const checkTaskStatus = async () => {
+            if (!taskId) return;
 
+            try {
+                const taskResponse = await axios.get(
+                    `http://127.0.0.1:5000/api/check-task-status/${taskId}`
+                );
+
+                if (taskResponse.status === 200 && taskResponse.data.success) {
+                    const taskStatus = taskResponse.data.result.status;
+
+                    if (taskStatus === "SUCCEEDED") {
+                        const newModelUrl = taskResponse.data.result.model_url;
+                        setModelUrl(newModelUrl);
+                        clearInterval(intervalId);
+                        setLoading(false);
+                    } else if (taskStatus === "FAILED") {
+                        setError("3D model creation failed.");
+                        clearInterval(intervalId);
+                        setLoading(false);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                setError("Failed to check task status.");
+                clearInterval(intervalId);
+                setLoading(false);
+            }
+        };
+
+        if (taskId) {
+            // Check status immediately
+            checkTaskStatus();
+
+            // Then set up polling
+            intervalId = setInterval(checkTaskStatus, 5000); // Check every 5 seconds
+        }
+
+        // Cleanup interval on component unmount or when taskId changes
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [taskId]);
 
     const handleButtonClick = async () => {
         setIsClicked(true);
@@ -57,31 +102,19 @@ const Display: React.FC<{ imglink: string, modellink: string }> = ({ imglink, mo
             );
 
             if (createModelResponse.data.success) {
-                const taskId = createModelResponse.data.task_id;
-                const taskResponse = await axios.get(
-                    `http://127.0.0.1:5000/api/check-task-status/${taskId}`
-                );
-
-                if (taskResponse.status === 200 && taskResponse.data.success) {
-                    const taskStatus = taskResponse.data.result.status;
-
-                    if (taskStatus === "SUCCEEDED") {
-                        const newModelUrl = taskResponse.data.result.model_url;
-                        setModelUrl(newModelUrl);
-                    }
-                } else {
-                    setError("Failed to fetch task status.");
-                }
+                setTaskId(createModelResponse.data.task_id);
             } else {
                 setError("Failed to create the 3D model. Please try again.");
+                setLoading(false);
             }
         } catch (err) {
             console.error(err);
             setError("An error occurred during the upload.");
-        } finally {
             setLoading(false);
         }
     };
+
+
     const handleCartClick = async () => {
         setLoading(true);
         try {
@@ -129,7 +162,7 @@ const Display: React.FC<{ imglink: string, modellink: string }> = ({ imglink, mo
                 </div>
 
                 {/* Right Section */}
-                {isClicked && (
+                {isClicked && modelUrl && (
                     <div className="w-1/2 flex justify-center items-center p-4">
                         <ModelViewer modelUrl={modelUrl} />
                     </div>
