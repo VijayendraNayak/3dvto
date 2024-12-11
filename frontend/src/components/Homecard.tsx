@@ -25,11 +25,11 @@ const Homecard: React.FC<{ item: ClothItem }> = ({ item }) => {
         duration: 2000,
       });
     } else {
+      toast.success("Cloth selected",{
+        position:"top-right",
+        duration:2000
+      })
       dispatch(selectCloth({name:item.name,id:item._id,category:item.category,sizes:item.sizes,price:item.price,color:item.color,thumbnail_path:item.thumbnail_path}))
-      window.scrollTo({
-        top: window.scrollY + 360,
-        behavior: "smooth", // Optional: Adds a smooth scrolling effect
-      });
     }
   };
 

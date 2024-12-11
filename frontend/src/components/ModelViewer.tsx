@@ -70,6 +70,16 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ modelUrl }) => {
       (gltf) => {
         loadedModel = gltf.scene;
         loadedModel.scale.set(2, 2, 2);
+
+        // Check materials and add default if necessary
+        loadedModel.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (!child.material) {
+              child.material = new THREE.MeshStandardMaterial({ color: 0x888888 });
+            }
+          }
+        });
+
         scene.add(loadedModel);
       },
       undefined,

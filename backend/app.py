@@ -37,6 +37,7 @@ CARTOON_API_KEY = os.getenv("CARTOON_API_KEY")
 CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
+os.environ["FAL_KEY"] =os.getenv("WRAP_KEY")
 
 
 cred = credentials.Certificate("./serviceAccountKey.json")
@@ -732,7 +733,6 @@ def serve_file(filename):
 #         return jsonify({"error": "Internal server error"}), 500
 
 
-os.environ["FAL_KEY"] = "7e288fd4-4b25-4167-8161-e5f603c5359c:fb7cd7d5b110e07d0a0de93a6d4bf8f4"
 
 # Endpoint for Virtual Try-On
 @app.route('/tryon', methods=['POST'])
@@ -743,15 +743,10 @@ def virtual_tryon():
         human_image_url = data.get('human_image_url')
         garment_image_url = data.get('garment_image_url')
         cloth_type = data.get('cloth_type', 'upper')
-        
+
         # Validate input
         if not human_image_url or not garment_image_url:
             return jsonify({"error": "human_image_url and garment_image_url are required"}), 400
-
-        def on_queue_update(update):
-            if isinstance(update, fal_client.InProgress):
-                for log in update.logs:
-                    print(log["message"])
 
         # Call the API and get the result
         result = fal_client.subscribe(
@@ -761,16 +756,13 @@ def virtual_tryon():
                 "garment_image_url": garment_image_url,
                 "cloth_type": cloth_type
             },
-            with_logs=True,
-            on_queue_update=on_queue_update
+            with_logs=False  
         )
 
         return jsonify({"result": result}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 
     
 # Error handlers
