@@ -20,32 +20,43 @@ interface OrderItem {
 
 
 const page = () => {
-    const [orderdata, setOrderdata] = useState<OrderItem[]>([])
+    const [orderdata, setOrderdata] = useState<OrderItem[] | number>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const user = useSelector((state: RootState) => state.auth.user) || null;
+
     useEffect(() => {
         const fetchorderData = async () => {
-            setLoading(true)
+            setLoading(true);
             try {
-                const response = await axios.get(`/api/order/getall/${user.id}`)
-                setOrderdata(response.data.orderitems)
+                const response = await axios.get(`/api/order/getall/${user.id}`);
+                setOrderdata(response.data.orderitems); // Assuming this returns an array of OrderItem
             } catch (err) {
-                console.log(err)
-            }finally{
-                setLoading(false)
+                console.log(err);
+                setOrderdata(0); // Handle failure case by setting 0
+            } finally {
+                setLoading(false);
             }
-        }
-        fetchorderData()
-    }, [])
+        };
+        if (user && user.id) fetchorderData();
+    }, [user]);
+
     return (
         <div className='mt-24 relative mx-8'>
-            {loading&&<Loader/>}
+            {loading && <Loader />}
             <div className='text-center mb-8 text-3xl font-semibold'>
-                Total Number of orders:{orderdata.length}
+                {Array.isArray(orderdata) ? (
+                    <>Total Number of orders: {orderdata.length}</>
+                ) : (
+                    <>No Orders to display</>
+                )}
             </div>
             <div>
-                {orderdata.length === 0 && (<p className="text-red-500 text-center font-semibold text-xl mt-4">No Orders to display</p>)}
-                {orderdata.length > 0 && (
+                {Array.isArray(orderdata) && orderdata.length === 0 && (
+                    <p className="text-red-500 text-center font-semibold text-xl mt-4">
+                        No Orders to display
+                    </p>
+                )}
+                {Array.isArray(orderdata) && orderdata.length > 0 && (
                     <div className="flex flex-wrap gap-4">
                         {orderdata.map((item) => (
                             <Ordercard key={item._id} item={item} />
@@ -54,7 +65,7 @@ const page = () => {
                 )}
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default page
+export default page;

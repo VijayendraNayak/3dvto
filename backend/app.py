@@ -15,8 +15,8 @@ import time
 from datetime import datetime, timedelta, timezone
 import os
 import requests
-# from gradio_client import Client,file
-# import io
+import fal_client
+import base64
 import http.client
 import json
 import requests
@@ -652,84 +652,126 @@ def get_cartoonized_image():
 def serve_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-def try_on_request_with_retry(payload, headers, max_retries=5, initial_delay=5):
-    conn = http.client.HTTPSConnection("virtual-try-on4.p.rapidapi.com")
-    delay = initial_delay
+# def try_on_request_with_retry(payload, headers, max_retries=5, initial_delay=5):
+#     conn = http.client.HTTPSConnection("virtual-try-on4.p.rapidapi.com")
+#     delay = initial_delay
     
-    for attempt in range(max_retries):
-        try:
-            conn.request("POST", "/tryon", payload, headers)
-            res = conn.getresponse()
-            response_data = res.read()
+#     for attempt in range(max_retries):
+#         try:
+#             conn.request("POST", "/tryon", payload, headers)
+#             res = conn.getresponse()
+#             response_data = res.read()
             
-            print(f"Attempt {attempt + 1}: Status {res.status}")
-            print(f"Response: {response_data.decode('utf-8')}")
+#             print(f"Attempt {attempt + 1}: Status {res.status}")
+#             print(f"Response: {response_data.decode('utf-8')}")
             
-            # Successful response
-            if res.status == 200:
-                return response_data
+#             # Successful response
+#             if res.status == 200:
+#                 return response_data
             
-            # Service Unavailable - wait and retry
-            if res.status == 503:
-                print(f"Service Unavailable. Waiting {delay} seconds before retry...")
-                time.sleep(delay)
-                # Exponential backoff
-                delay *= 2
-                continue
+#             # Service Unavailable - wait and retry
+#             if res.status == 503:
+#                 print(f"Service Unavailable. Waiting {delay} seconds before retry...")
+#                 time.sleep(delay)
+#                 # Exponential backoff
+#                 delay *= 2
+#                 continue
             
-            # Other error statuses
-            if res.status >= 400:
-                print(f"Error status received: {res.status}")
-                # Wait before next retry
-                time.sleep(delay)
-                continue
+#             # Other error statuses
+#             if res.status >= 400:
+#                 print(f"Error status received: {res.status}")
+#                 # Wait before next retry
+#                 time.sleep(delay)
+#                 continue
         
-        except Exception as e:
-            print(f"Error on attempt {attempt + 1}: {str(e)}")
-            time.sleep(delay)
-            delay *= 2
+#         except Exception as e:
+#             print(f"Error on attempt {attempt + 1}: {str(e)}")
+#             time.sleep(delay)
+#             delay *= 2
     
-    # If all retries fail
-    raise Exception("API request failed after maximum retries")
+#     # If all retries fail
+#     raise Exception("API request failed after maximum retries")
 
+# @app.route('/tryon', methods=['POST'])
+# def virtual_try_on():
+#     try:
+#         data = request.json
+#         garment_url = data.get('garment_url')
+#         human_url = data.get('human_url')
+#         category = data.get('category', 'upper_body')
+
+#         if not garment_url or not human_url:
+#             return jsonify({"error": "garment_url and human_url are required"}), 400
+
+#         payload = json.dumps({
+#             "garm": garment_url,
+#             "human": human_url,
+#             "category": category
+#         })
+
+#         headers = {
+#             'x-rapidapi-key': "b2e2eef074mshaf8ed860e4f49ebp1250a4jsn1a1a419f1200",
+#             'x-rapidapi-host': "virtual-try-on4.p.rapidapi.com",
+#             'Content-Type': "application/json"
+#         }
+
+#         try:
+#             response_data = try_on_request_with_retry(payload, headers)
+#             result = json.loads(response_data.decode("utf-8"))
+#             return jsonify({"img": result}), 200
+        
+#         except Exception as e:
+#             # Log the error for server-side tracking
+#             print(f"Try-on request failed: {str(e)}")
+#             # Return a 500 error with a generic message
+#             return jsonify({"error": "Unable to process try-on request"}), 500
+
+#     except Exception as e:
+#         # Catch any unexpected errors
+#         print(f"Unexpected error in virtual_try_on: {str(e)}")
+#         return jsonify({"error": "Internal server error"}), 500
+
+
+os.environ["FAL_KEY"] = "7e288fd4-4b25-4167-8161-e5f603c5359c:fb7cd7d5b110e07d0a0de93a6d4bf8f4"
+
+# Endpoint for Virtual Try-On
 @app.route('/tryon', methods=['POST'])
-def virtual_try_on():
+def virtual_tryon():
     try:
+        # Parse request JSON
         data = request.json
-        garment_url = data.get('garment_url')
-        human_url = data.get('human_url')
-        category = data.get('category', 'upper_body')
-
-        if not garment_url or not human_url:
-            return jsonify({"error": "garment_url and human_url are required"}), 400
-
-        payload = json.dumps({
-            "garm": garment_url,
-            "human": human_url,
-            "category": category
-        })
-
-        headers = {
-            'x-rapidapi-key': "5700b5c805mshff36c53b554a50cp182f57jsn3a9c6c50c9cc",
-            'x-rapidapi-host': "virtual-try-on4.p.rapidapi.com",
-            'Content-Type': "application/json"
-        }
-
-        try:
-            response_data = try_on_request_with_retry(payload, headers)
-            result = json.loads(response_data.decode("utf-8"))
-            return jsonify({"img": result}), 200
+        human_image_url = data.get('human_image_url')
+        garment_image_url = data.get('garment_image_url')
+        cloth_type = data.get('cloth_type', 'upper')
         
-        except Exception as e:
-            # Log the error for server-side tracking
-            print(f"Try-on request failed: {str(e)}")
-            # Return a 500 error with a generic message
-            return jsonify({"error": "Unable to process try-on request"}), 500
+        # Validate input
+        if not human_image_url or not garment_image_url:
+            return jsonify({"error": "human_image_url and garment_image_url are required"}), 400
+
+        def on_queue_update(update):
+            if isinstance(update, fal_client.InProgress):
+                for log in update.logs:
+                    print(log["message"])
+
+        # Call the API and get the result
+        result = fal_client.subscribe(
+            "fal-ai/cat-vton",
+            arguments={
+                "human_image_url": human_image_url,
+                "garment_image_url": garment_image_url,
+                "cloth_type": cloth_type
+            },
+            with_logs=True,
+            on_queue_update=on_queue_update
+        )
+
+        return jsonify({"result": result}), 200
 
     except Exception as e:
-        # Catch any unexpected errors
-        print(f"Unexpected error in virtual_try_on: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        return jsonify({"error": str(e)}), 500
+
+
+
     
 # Error handlers
 @app.errorhandler(404)

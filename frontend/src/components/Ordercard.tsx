@@ -38,11 +38,13 @@ const Ordercard: React.FC<{ item: OrderItem }> = ({ item }) => {
           console.log("Order deleted successfully")
           toast.success("Order deleted successfully!", {
             position: "top-right",
-            duration: 2000
+            duration: 500
           });
           setTimeout(() => {
+            setLoading(true)
             location.reload();
-          }, 2000);
+            setLoading(false)
+          }, 100);
         }
       } catch (err) {
         console.log(err)
