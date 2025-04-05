@@ -764,6 +764,105 @@ def virtual_tryon():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Add this route to your Flask application
+@app.route('/pixelcut-tryon', methods=['POST'])
+def pixelcut_tryon():
+    try:
+        # Parse request JSON
+        data = request.get_json()
+        person_image_url = data.get('person_image_url')
+        garment_image_url = data.get('garment_image_url')
+
+        # Validate input
+        if not person_image_url or not garment_image_url:
+            return jsonify({"error": "person_image_url and garment_image_url are required"}), 400
+
+        # Log the URLs for debugging
+        print(f"Person image URL: {person_image_url}")
+        print(f"Garment image URL: {garment_image_url}")
+
+        # PixelCut API configuration
+        pixelcut_url = "https://api.developer.pixelcut.ai/v1/try-on"
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-API-KEY': 'sk_a8b10eca5f564a389dc97bd844c079b8'  # Use environment variable in production
+        }
+
+        # Build request payload
+        payload = {
+            "person_image_url": person_image_url,
+            "garment_image_url": garment_image_url
+        }
+        
+        # Log the payload for debugging
+        print(f"Sending payload to PixelCut: {payload}")
+
+        # Make request to PixelCut API
+        response = requests.post(pixelcut_url, headers=headers, json=payload, timeout=30)
+        
+        # Log the raw response for debugging
+        print(f"PixelCut API response status: {response.status_code}")
+        print(f"PixelCut API response body: {response.text}")
+        
+        if response.status_code != 200:
+            return jsonify({
+                "error": f"PixelCut API returned error: {response.status_code}",
+                "details": response.text
+            }), response.status_code
+            
+        # Return the result from PixelCut
+        return jsonify(response.json()), 200
+
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Request to PixelCut API timed out"}), 504
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "error": f"Request to PixelCut API failed: {str(e)}",
+            "status_code": e.response.status_code if hasattr(e, 'response') and e.response else 'unknown',
+            "details": e.response.text if hasattr(e, 'response') and e.response else 'no details'
+        }), 502
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+    try:
+        # Parse request JSON
+        data = request.get_json()
+        person_image_url = data.get('person_image_url')
+        garment_image_url = data.get('garment_image_url')
+
+        # Validate input
+        if not person_image_url or not garment_image_url:
+            return jsonify({"error": "person_image_url and garment_image_url are required"}), 400
+
+        # PixelCut API configuration
+        pixelcut_url = "https://api.developer.pixelcut.ai/v1/try-on"
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-API-KEY': 'sk_a8b10eca5f564a389dc97bd844c079b8'  # Use environment variable in production
+        }
+
+        # Build request payload
+        payload = json.dumps({
+            "person_image_url": person_image_url,
+            "garment_image_url": garment_image_url
+        })
+
+        # Make request to PixelCut API
+        response = requests.post(pixelcut_url, headers=headers, data=payload, timeout=30)
+        response.raise_for_status()  # Raise exception for 4XX/5XX responses
+        
+        # Return the result from PixelCut
+        return jsonify(response.json()), 200
+
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Request to PixelCut API timed out"}), 504
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Request to PixelCut API failed: {str(e)}"}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 # Error handlers
 @app.errorhandler(404)

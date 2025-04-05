@@ -172,7 +172,7 @@ const Display: React.FC<{ imglink: string, modellink: string }> = ({ imglink, mo
                 {!isClicked ? (
                     <button
                         onClick={handleButtonClick}
-                        className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                        className="px-4 py-2 hidden bg-purple-500 text-white rounded-lg hover:bg-purple-600"
                     >
                         Convert to 3D
                     </button>
