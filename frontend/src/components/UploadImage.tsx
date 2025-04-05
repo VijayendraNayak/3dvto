@@ -15,14 +15,11 @@ import Display from "./Display";
 const UploadImage: React.FC = () => {
     // State declarations
     const [file, setFile] = useState<File | null>(null);
-    const [wrappedfile, setWrappedfile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [uploaded, setUploaded] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const [index, setIndex] = useState<number>(1);
     const [display, setDisplay] = useState<boolean>(false);
-    const [threedurl, setThreedurl] = useState<string | null>(null);
     const [wrappedurl, setWrappedurl] = useState<string | null>(null);
     const [hide, setHide] = useState<boolean>(false);
 
@@ -113,118 +110,65 @@ const UploadImage: React.FC = () => {
         }
     };
 
-    // Proceed with try-on and cartoonization
+    // Direct try-on with FAL API only - no background removal or cartoonization
     const handleProceedClick = async () => {
         if (loading) return;
     
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
             controller.abort();
-        }, 30000);  // 30-second timeout
+        }, 30000);
     
         try {
+            console.log("[DEBUG] Starting virtual try-on...");
+    
             // Reset states
             setError(null);
             setDisplay(false);
             setLoading(true);
-            setThreedurl(null);
             setWrappedurl(null);
     
-            // Try-on API request
+            console.log("[DEBUG] cloth.thumbnail_path:", cloth.thumbnail_path);
+            console.log("[DEBUG] image.image:", image.image);
+    
+            // Build request payload
             const requestData = {
-                garment_image_url: cloth.thumbnail_path,
-                human_image_url: image.image,
+                garment_image_url: cloth?.thumbnail_path,
+                human_image_url: image?.image,
                 cloth_type: "upper",
+                skip_background_removal: true
             };
-            
+    
+            console.log("[DEBUG] Request Payload:", requestData);
+    
+            // Axios call
             try {
                 const response = await axios.post("/api/tryon", requestData, {
                     headers: { "Content-Type": "application/json" },
                     signal: controller.signal,
-                    timeout: 30000  // Axios timeout
+                    timeout: 30000
                 });
     
-                const imageUrl = response.data.result.image.url;
-                if (!imageUrl || typeof imageUrl !== 'string') {
+                console.log("[DEBUG] API Response:", response.data);
+    
+                const imageUrl = response.data?.result?.image?.url;
+                if (!imageUrl || typeof imageUrl !== "string") {
                     throw new Error("Invalid image URL received");
                 }
     
-                // Fetch wrapped image
-                const imageResponse = await axios.get(imageUrl, {
-                    responseType: 'blob',
-                    signal: controller.signal,
-                    timeout: 10000
-                });
-    
-                const wrappedImageFile = new File(
-                    [imageResponse.data],
-                    "wrapped_image.jpg",
-                    { type: imageResponse.headers['content-type'] || 'image/jpeg' }
-                );
-    
-                // Update states
                 setWrappedurl(imageUrl);
-                setWrappedfile(wrappedImageFile);
                 setDisplay(true);
+                setUploaded(true);
+                setHide(false);
     
-                // Cartoonization
-                const formData = new FormData();
-                formData.append("image", wrappedImageFile);
-                formData.append("index", String(index));
-    
-                const cartoonizeResponse = await axios.post("/api/cartoonize", formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
+                toast.success("Virtual try-on completed", {
+                    position: "top-right",
+                    duration: 2000,
                 });
-    
-                // Extract task ID for tracking
-                const task_id = cartoonizeResponse.data.task_id;
-    
-                if (task_id) {
-                    // Notify user that processing is starting
-                    toast.info("Your image is being processed. Please wait...", {
-                        position: "top-right",
-                        duration: 3000,
-                    });
-    
-                    // Wait for processing to complete
-                    await new Promise(resolve => setTimeout(resolve, 30000));
-    
-                    // Retrieve the processed image
-                    const uploadResponse = await axios.get('/api/get_result', {
-                        params: { task_id: task_id }
-                    });
-    
-                    const { status, image_url, result_url } = uploadResponse.data;
-    
-                    // Handle successful processing
-                    if (status === 'success' || status === 'PROCESS_SUCCESS' || status === 'COMPLETED') {
-                        const processingUrl = image_url || result_url;
-    
-                        if (processingUrl) {
-                            // Set the final 3D URL and mark as uploaded
-                            setThreedurl(processingUrl);
-                            setUploaded(true);
-                            setHide(false);  
-    
-                            toast.success("Image processed successfully", {
-                                position: "top-right",
-                                duration: 2000,
-                            });
-                        } else {
-                            throw new Error('No image URL received');
-                        }
-                    } else {
-                        throw new Error('Processing failed');
-                    }
-                } else {
-                    // Handle case where task_id is not received
-                    throw new Error("Failed to start the cartoonization job");
-                }
     
             } catch (requestError) {
-                // Specific error handling for request-related errors
+                console.error("[DEBUG] API Error:", requestError);
+    
                 if (axios.isCancel(requestError)) {
                     toast.error("Request timed out. Please try again.", {
                         position: "top-right",
@@ -237,8 +181,7 @@ const UploadImage: React.FC = () => {
     
         } catch (error) {
             console.error("Processing Error:", error);
-            
-            // Differentiated error handling
+    
             if (axios.isCancel(error)) {
                 toast.error("Operation was cancelled. Please try again.", {
                     position: "top-right",
@@ -263,6 +206,7 @@ const UploadImage: React.FC = () => {
             setLoading(false);
         }
     };
+    
 
     return (
         <div className="flex flex-col bg-gray-400 bg-opacity-30 mt-20">
@@ -360,10 +304,10 @@ const UploadImage: React.FC = () => {
                     </div>
 
                     {/* Display Section */}
-                    {display && threedurl && (
+                    {display && wrappedurl && (
                         <Display 
-                            imglink={wrappedurl || ''} 
-                            modellink={threedurl} 
+                            imglink={wrappedurl} 
+                            modellink={wrappedurl} // Using the same wrapped image URL for both props
                         />
                     )}
                 </div>

@@ -37,7 +37,7 @@ CARTOON_API_KEY = os.getenv("CARTOON_API_KEY")
 CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
-os.environ["FAL_KEY"] =os.getenv("WRAP_KEY")
+fal_key = os.getenv("FAL_KEY")
 
 
 cred = credentials.Certificate("./serviceAccountKey.json")
