@@ -20,6 +20,11 @@ import base64
 import http.client
 import json
 import requests
+from PIL import Image
+from werkzeug.utils import secure_filename
+import cloudinary
+import cloudinary.uploader
+from viton_hd.infer import run_viton_pipeline  # Your VITON inference logic
 
 
 # Load environment variables
@@ -38,7 +43,13 @@ CARTOON_API_HOST = "ai-cartoon-generator.p.rapidapi.com"
 REMOVE_BG_KEY = os.getenv("REMOVE_BG_KEY")
 ALLOWED_EXTENSIONS={'png','jpg','jpeg'}
 fal_key = os.getenv("FAL_KEY")
+pixelcut_key=os.getenv('PIXELCUT_KEY')
 
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=("API_KEY"),
+    api_secret=("API_SECRET")
+)
 
 cred = credentials.Certificate("./serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
@@ -146,6 +157,47 @@ def register():
 
 # Login and generate token
 
+@app.route('/vto', methods=['POST'])
+def virtual_try_on():
+    data = request.get_json()
+    person_url = data.get('person_image')
+    cloth_url = data.get('cloth_image')
+
+
+    if not person_url or not cloth_url:
+        return jsonify({'error': 'Missing image URLs'}), 400
+
+    try:
+        # Download person image
+        person_img = requests.get(person_url, stream=True)
+        person_filename = os.path.join(UPLOAD_FOLDER, 'person.jpg')
+        with open(person_filename, 'wb') as out:
+            out.write(person_img.content)
+
+        # Download cloth image
+        cloth_img = requests.get(cloth_url, stream=True)
+        cloth_filename = os.path.join(UPLOAD_FOLDER, 'cloth.jpg')
+        with open(cloth_filename, 'wb') as out:
+            out.write(cloth_img.content)
+
+        # Run VITON pipeline
+        output_path = run_viton_pipeline(person_filename, cloth_filename)
+
+        # Upload result to Cloudinary
+        upload_result = cloudinary.uploader.upload(output_path)
+        image_url = upload_result['secure_url']
+
+        return jsonify({"status": "success", "image_url": image_url})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        for path in [person_filename, cloth_filename]:
+            if os.path.exists(path):
+                os.remove(path)
+
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -250,7 +302,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @app.route('/admin/add-cloth', methods=['POST'])
 def addcloth():
     if 'image' not in request.files:
@@ -262,47 +313,57 @@ def addcloth():
         return jsonify({"error": "No selected file"}), 400
 
     if file and allowed_file(file.filename):
-        # Secure and save the file temporarily
         filename = secure_filename(file.filename)
         local_path = os.path.join("/tmp", filename)
-        file.save(local_path)
 
-        # Upload to Firebase Storage
-        blob = bucket.blob(f"clothing_images/{filename}")
-        blob.upload_from_filename(local_path)
-        blob.make_public()  # Make the file publicly accessible
+        try:
+            # Open and resize image if needed
+            img = Image.open(file.stream)
+            width, height = img.size
 
-        # Get the public URL for the uploaded image
-        file_url = blob.public_url
+            if width > 6000 or height > 6000:
+                print("Resizing cloth image due to high resolution")
+                # Replace ANTIALIAS with Resampling.LANCZOS
+                img.thumbnail((5999, 5999), Image.Resampling.LANCZOS)
 
-        # Remove the temporary file
-        os.remove(local_path)
+            img.save(local_path)
 
-        # Process other form data
-        data = request.form
-        clothing_item = {
-            'name': data.get('name', ''),
-            'category': data.get('category', ''),
-            'price': float(data.get('price', 0)),
-            'sizes': data.get('sizes', ''),
-            'color': data.get('color', ''),
-            'stock':data.get('stock',''),
-            'thumbnail_path': file_url,  # Store the Firebase URL
-            'created_at': datetime.now(timezone.utc),
-            'is_active': True
-        }
+            # Upload to Firebase
+            blob = bucket.blob(f"clothing_images/{filename}")
+            blob.upload_from_filename(local_path)
+            blob.make_public()
 
-        # Insert the clothing item into the database
-        result = mongo.db.clothing_items.insert_one(clothing_item)
+            file_url = blob.public_url
+            os.remove(local_path)
 
-        return jsonify({
-            'message': 'Clothing item added successfully',
-            'id': str(result.inserted_id),
-            'thumbnail_url': file_url
-        }), 201
-    else:
-        return jsonify({"error": "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed."}), 400
-    
+            # Get form data
+            data = request.form
+            clothing_item = {
+                'name': data.get('name', ''),
+                'category': data.get('category', ''),
+                'price': float(data.get('price', 0)),
+                'sizes': data.get('sizes', ''),
+                'color': data.get('color', ''),
+                'stock': data.get('stock', ''),
+                'thumbnail_path': file_url,
+                'created_at': datetime.now(timezone.utc),
+                'is_active': True
+            }
+
+            result = mongo.db.clothing_items.insert_one(clothing_item)
+
+            return jsonify({
+                'message': 'Clothing item added successfully',
+                'id': str(result.inserted_id),
+                'thumbnail_url': file_url
+            }), 201
+
+        except Exception as e:
+            print("Error processing cloth image:", e)
+            return jsonify({"error": "Image processing failed"}), 500
+
+    return jsonify({"error": "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed."}), 400
+
 @app.route('/admin/delete-cloth/<cloth_id>', methods=['DELETE'])
 def delete_cloth(cloth_id):
     clothing_item = mongo.db.clothing_items.find_one({"_id": ObjectId(cloth_id)})
@@ -524,6 +585,10 @@ def cartgetall():
     return jsonify(cartitems),200
 
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 # Route to upload an image
 @app.route("/upload", methods=["POST"])
 def upload_image():
@@ -537,29 +602,90 @@ def upload_image():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        local_path = os.path.join("./uploads", filename)  # Save temporarily before uploading to Firebase
-        file.save(local_path)
-        
-        # Upload to Firebase Storage
-        blob = bucket.blob(f"images/{filename}")
-        blob.upload_from_filename(local_path)
-        blob.make_public()  # Make the file publicly accessible
-        
-        # Get the public URL
-        file_url = blob.public_url
-        
-        # Save the image metadata to MongoDB
-        image_data = {
-            "filename": filename,
-            "url": file_url
-        }
-        mongo.db.images.insert_one(image_data)
-        
-        # Clean up temporary file
-        os.remove(local_path)
-        
-        return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
+        local_path = os.path.join("./uploads", filename)
+
+        try:
+            # Open image and check resolution
+            img = Image.open(file.stream)
+            width, height = img.size
+
+            if width > 6000 or height > 6000:
+                print("Resizing image because resolution is too high")
+                # Replace ANTIALIAS with Resampling.LANCZOS
+                img.thumbnail((5999, 5999), Image.Resampling.LANCZOS)
+
+            img.save(local_path)
+
+            # Upload to Firebase Storage
+            blob = bucket.blob(f"images/{filename}")
+            blob.upload_from_filename(local_path)
+            blob.make_public()
+
+            file_url = blob.public_url
+
+            # Save metadata to MongoDB
+            image_data = {
+                "filename": filename,
+                "url": file_url
+            }
+            mongo.db.images.insert_one(image_data)
+
+            # Clean up local file
+            os.remove(local_path)
+
+            return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
+
+        except Exception as e:
+            print("Image processing failed:", e)
+            return jsonify({"error": "Image processing failed"}), 500
+
+    return jsonify({"error": "Invalid file type"}), 400
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
     
+    file = request.files["file"]
+    
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        local_path = os.path.join("./uploads", filename)
+
+        try:
+            # Open image and check resolution
+            img = Image.open(file.stream)
+            width, height = img.size
+
+            if width > 6000 or height > 6000:
+                print("Resizing image because resolution is too high")
+                img.thumbnail((5999, 5999), Image.ANTIALIAS)
+
+            img.save(local_path)
+
+            # Upload to Firebase Storage
+            blob = bucket.blob(f"images/{filename}")
+            blob.upload_from_filename(local_path)
+            blob.make_public()
+
+            file_url = blob.public_url
+
+            # Save metadata to MongoDB
+            image_data = {
+                "filename": filename,
+                "url": file_url
+            }
+            mongo.db.images.insert_one(image_data)
+
+            # Clean up local file
+            os.remove(local_path)
+
+            return jsonify({"message": "File uploaded successfully", "url": file_url}), 201
+
+        except Exception as e:
+            print("Image processing failed:", e)
+            return jsonify({"error": "Image processing failed"}), 500
+
     return jsonify({"error": "Invalid file type"}), 400
 
 @app.route('/cartoonize', methods=['POST'])
@@ -786,7 +912,7 @@ def pixelcut_tryon():
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-API-KEY': 'sk_a8b10eca5f564a389dc97bd844c079b8'  # Use environment variable in production
+            'X-API-KEY': pixelcut_key  # Use environment variable in production
         }
 
         # Build request payload
